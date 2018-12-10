@@ -1,4 +1,4 @@
-Apache Sling Scripting Maven Plugin (WIP, name not final)
+Apache Sling Scripting Bundle Maven Plugin
 ====
 
 ## What
@@ -20,8 +20,8 @@ expects the following layout:
 javax.script/<sling-resourceType>/<version>/[<METHOD>.]<name>[.<selector>][.<extension>].<script-extension>
 ```
 
-From that, it will create an appropriate `Provide-Capability` (see the ["How"](../org-apache-sling-scripting-resolver/#how)
-section of the scripting resolver) with the following extra assumptions:
+From that, it will create an appropriate `Provide-Capability` (see the ["How"](https://github.com/apache/sling-org-apache-sling-scripting-bundle-tracker/#how)
+section of the scripting bundle tracker) with the following extra assumptions:
 
   * if the `name` part equals the `sling.resourceType` or the last part of it, it is assumed to be the name of the main script;
   otherwise, it is assumed to be a selector;
