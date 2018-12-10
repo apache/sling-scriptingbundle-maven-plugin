@@ -4,7 +4,7 @@ Apache Sling Scripting Maven Plugin (WIP, name not final)
 ## What
 This plugin provides support for deriving `sling.resourceType` `Requirements` and `Capabilities` from
 the file-system layout of scripts. Bundles that get extended by the
-[`org.apache.sling.scripting.resolver`](../org-apache-sling-scripting-resolver) with these `Requirements` and
+[`org.apache.sling.scripting.bundle.tracker`](https://github.com/apache/sling-org-apache-sling-scripting-bundle-tracker) with these `Requirements` and
 `Capabilities` will have their scripts made available automatically with added versioning and dependency
 support.
 
@@ -52,8 +52,8 @@ sling.resourceType;
 
 For a bigger example providing several versions and using an `extends` file consider the following two projects: 
 
-  * [example](../examples/org-apache-sling-scripting-examplebundle);
-  * [example.hi](../examples/org-apache-sling-scripting-examplebundle.hi).
+  * [example](https://github.com/apache/sling-org-apache-sling-scripting-bundle-tracker-it/tree/master/examples/org-apache-sling-scripting-examplebundle);
+  * [example.hi](https://github.com/apache/sling-org-apache-sling-scripting-bundle-tracker-it/tree/master/examples/org-apache-sling-scripting-examplebundle.hi).
 
 ## So how do I use the plugin?
 
@@ -61,8 +61,8 @@ The plugin doesn't currently integrate with the `maven-bundle-plugin`. The gener
 `Provide-Capability` headers values are simply made available via properties:
 
 ```
-${org.apache.sling.scripting.maven.plugin.Provide-Capability}
-${org.apache.sling.scripting.maven.plugin.Require-Capability}
+${org.apache.sling.scriptingbundle.maven.plugin.Provide-Capability}
+${org.apache.sling.scriptingbundle.maven.plugin.Require-Capability}
 ```
 
 However, that makes it reasonable straightforward to use the plugin by just adding it into your build in the 
@@ -72,7 +72,7 @@ the `maven-bundle-plugin`:
 ```
     <plugin>
     <groupId>org.apache.sling</groupId>
-        <artifactId>org.apache.sling.scripting.maven.plugin</artifactId>
+        <artifactId>scriptingbundle-maven-plugin</artifactId>
         <version>0.0.1-SNAPSHOT</version>
         <executions>
             <execution>
@@ -90,15 +90,15 @@ the `maven-bundle-plugin`:
         <configuration>
             <instructions>
                 <Provide-Capability>
-                    ${org.apache.sling.scripting.maven.plugin.Provide-Capability}
+                    ${org.apache.sling.scriptingbundle.maven.plugin.Provide-Capability}
                 </Provide-Capability>
                 <Require-Capability>
                     osgi.extender;filter:="(&amp;(osgi.extender=sling.scripting)(version>=1.0.0)(!(version>=2.0.0)))",
-                    ${org.apache.sling.scripting.maven.plugin.Require-Capability}
+                    ${org.apache.sling.scriptingbundle.maven.plugin.Require-Capability}
                 </Require-Capability>
             </instructions>
         </configuration>
     </plugin>
 ```
 
-You can find an example in [here](../examples/org-apache-sling-scripting-examplebundle/pom.xml).
+You can find an example in [here](https://github.com/apache/sling-org-apache-sling-scripting-bundle-tracker-it/tree/master/examples/org-apache-sling-scripting-examplebundle/pom.xml).
