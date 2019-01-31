@@ -1,6 +1,6 @@
-[<img src="http://sling.apache.org/res/logos/sling.png"/>](http://sling.apache.org)
+[<img src="https://sling.apache.org/res/logos/sling.png"/>](https://sling.apache.org)
 
-  [![Build Status](https://builds.apache.org/buildStatus/icon?job=Sling%20(pipeline%20jobs)/sling-scriptingbundle-maven-plugin/master)](https://builds.apache.org/job/Sling%20(pipeline%20jobs)/job/sling-scriptingbundle-maven-plugin/job/master/) [![Test Status](https://img.shields.io/jenkins/t/https/builds.apache.org/job/Sling%20(pipeline%20jobs)/job/sling-scriptingbundle-maven-plugin/job/master.svg)](https://builds.apache.org/job/Sling%20(pipeline%20jobs)/job/sling-scriptingbundle-maven-plugin/job/master/test_results_analyzer/) [![Coverage Status](https://img.shields.io/jenkins/c/https/builds.apache.org/job/Sling%20(pipeline%20jobs)/job/sling-scriptingbundle-maven-plugin/job/master.svg)](https://builds.apache.org/buildStatus/icon?job=Sling%20(pipeline%20jobs)/sling-scriptingbundle-maven-plugin/master) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+ [![Build Status](https://builds.apache.org/buildStatus/icon?job=Sling/sling-scriptingbundle-maven-plugin/master)](https://builds.apache.org/job/Sling/job/sling-scriptingbundle-maven-plugin/job/master) [![Test Status](https://img.shields.io/jenkins/t/https/builds.apache.org/job/Sling/job/sling-scriptingbundle-maven-plugin/job/master.svg)](https://builds.apache.org/job/Sling/job/sling-scriptingbundle-maven-plugin/job/master/test_results_analyzer/) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 Apache Sling Scripting Bundle Maven Plugin
 ====
