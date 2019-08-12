@@ -18,6 +18,7 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.scriptingbundle.maven.plugin;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -151,7 +152,7 @@ public class ScriptingMavenPlugin extends AbstractMojo
         {
             String[] parts = require.split(";");
             String rt = parts[0];
-            String filter = "(sling.resourceType=\"" + rt.replace("\"", "\\\"") + "\")";
+            String filter = "(sling.resourceType=" + rt.replace("\"", "\\\"") + ")";
 
             if (parts.length > 1)
             {
