@@ -17,27 +17,25 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling</artifactId>
         <version>35</version>
-        <relativePath/>
+        <relativePath />
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>scriptingbundle-maven-plugin</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>maven-plugin</packaging>
 
         <scm>
             <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</connection>
             <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</developerConnection>
             <url>https://gitbox.apache.org/repos/asf?p=sling-scriptingbundle-maven-plugin.git</url>
-            <tag>HEAD</tag>
+            <tag>scriptingbundle-maven-plugin-0.1.0</tag>
         </scm>
 
     <properties>
