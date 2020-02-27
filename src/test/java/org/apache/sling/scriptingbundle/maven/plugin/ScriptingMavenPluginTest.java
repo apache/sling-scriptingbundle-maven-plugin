@@ -21,11 +21,9 @@ package org.apache.sling.scriptingbundle.maven.plugin;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ScriptingMavenPluginTest
-{
+public class ScriptingMavenPluginTest {
     @Test
-    public void testScriptNameFullCalculation()
-    {
+    public void testScriptNameFullCalculation() {
         String scriptPath = "org.apache.foo/1.0.0/POST.hi.xml.jsp";
 
         ScriptingMavenPlugin.Script script = ScriptingMavenPlugin.getScripts(scriptPath);
@@ -39,8 +37,7 @@ public class ScriptingMavenPluginTest
     }
 
     @Test
-    public void testScriptNameMinCalculation()
-    {
+    public void testScriptNameMinCalculation() {
         String scriptPath = "org.apache.foo/foo";
 
         ScriptingMavenPlugin.Script script = ScriptingMavenPlugin.getScripts(scriptPath);
@@ -54,8 +51,7 @@ public class ScriptingMavenPluginTest
     }
 
     @Test
-    public void testScriptNameVersionAndMethodCalculation()
-    {
+    public void testScriptNameVersionAndMethodCalculation() {
         String scriptPath = "org.apache.foo/1.2.0/Post.jsp";
 
         ScriptingMavenPlugin.Script script = ScriptingMavenPlugin.getScripts(scriptPath);
@@ -69,15 +65,14 @@ public class ScriptingMavenPluginTest
     }
 
     @Test
-    public void testScriptNameVersionAndMethodMinCalculation()
-    {
+    public void testScriptNameVersionAndMethodMinCalculation() {
         String scriptPath = "org.apache.foo/1.2.0/Post.";
 
         ScriptingMavenPlugin.Script script = ScriptingMavenPlugin.getScripts(scriptPath);
 
         Assert.assertEquals("org.apache.foo", script.rt);
         Assert.assertEquals("1.2.0", script.version);
-        Assert.assertEquals("",script.name);
+        Assert.assertEquals("", script.name);
         Assert.assertEquals("POST", script.method);
         Assert.assertNull(script.extension);
         Assert.assertNull(script.scriptExtension);

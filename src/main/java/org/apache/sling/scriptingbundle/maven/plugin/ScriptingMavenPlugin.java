@@ -44,14 +44,16 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Mojo(name = "metadata", defaultPhase = LifecyclePhase.PACKAGE)
-public class ScriptingMavenPlugin extends AbstractMojo
-{
+@Mojo(name = "metadata",
+      defaultPhase = LifecyclePhase.PACKAGE)
+public class ScriptingMavenPlugin extends AbstractMojo {
 
-    @Parameter(defaultValue = "${project}", readonly = true)
+    @Parameter(defaultValue = "${project}",
+               readonly = true)
     private MavenProject project;
 
-    @Parameter(defaultValue = "${session}", readonly = true)
+    @Parameter(defaultValue = "${session}",
+               readonly = true)
     private MavenSession session;
 
     @Parameter(defaultValue = "${project.basedir}/src/main/resources/javax.script")
@@ -62,8 +64,7 @@ public class ScriptingMavenPlugin extends AbstractMojo
 
     private static final Set<String> FILE_SEPARATORS = new HashSet<>(Arrays.asList("\\", "/"));
 
-    public void execute() throws MojoExecutionException
-    {
+    public void execute() throws MojoExecutionException {
         File sdFile = new File(scriptsDirectory);
         if (!sdFile.exists()) {
             sdFile = new File(project.getBasedir(), scriptsDirectory);
@@ -72,7 +73,8 @@ public class ScriptingMavenPlugin extends AbstractMojo
             }
         }
         final AtomicReference<File> scriptsDirectoryReference = new AtomicReference<>();
-        scriptsDirectoryReference.set(sdFile);;
+        scriptsDirectoryReference.set(sdFile);
+        ;
         DirectoryScanner scanner = new DirectoryScanner();
         scanner.setBasedir(sdFile);
         scanner.setIncludes("**");
@@ -81,93 +83,75 @@ public class ScriptingMavenPlugin extends AbstractMojo
         scanner.scan();
 
         List<String> scriptPaths = Stream.of(scanner.getIncludedFiles()).map(path -> new File(scriptsDirectoryReference.get(), path))
-            .map(file -> file.getPath().substring((scriptsDirectoryReference.get().getPath() + File.pathSeparatorChar).length()))
-            .collect(Collectors.toList());
+                .map(file -> file.getPath().substring((scriptsDirectoryReference.get().getPath() + File.pathSeparatorChar).length()))
+                .collect(Collectors.toList());
 
 
         List<String> requires = new ArrayList<>();
 
         List<String> capabilities = new ArrayList<>();
-        for (String scriptPath : scriptPaths)
-        {
+        for (String scriptPath : scriptPaths) {
             Script script = getScripts(scriptPath);
 
             String capability = "sling.resourceType;sling.resourceType=\"" + script.rt.replace("\"", "\\\"") + "\"";
 
-            if (!(script.rt.equals(script.name) || script.rt.endsWith("." + script.name) || script.name.isEmpty()))
-            {
-                if (!script.name.equalsIgnoreCase("requires"))
-                {
-                    if (!script.name.equalsIgnoreCase("extends"))
-                    {
+            if (!(script.rt.equals(script.name) || script.rt.endsWith("." + script.name) || script.name.isEmpty())) {
+                if (!script.name.equalsIgnoreCase("requires")) {
+                    if (!script.name.equalsIgnoreCase("extends")) {
                         capability += ";sling.resourceType.selectors:List<String>=\"" + script.name.replace("\"", "\\\"") + "\"";
-                    }
-                    else
-                    {
-                        try (BufferedReader input = new BufferedReader(new FileReader(new File(scriptsDirectoryReference.get(), scriptPath))))
-                        {
+                    } else {
+                        try (BufferedReader input = new BufferedReader(
+                                new FileReader(new File(scriptsDirectoryReference.get(), scriptPath)))) {
                             String extend = input.readLine();
 
                             capability += ";extends=\"" + extend.split(";")[0].replace("\"", "\\\"") + "\"";
-                            requires.add(extend + ";extends=true" );
-                        }
-                        catch (Exception ex)
-                        {
+                            requires.add(extend + ";extends=true");
+                        } catch (Exception ex) {
                             getLog().error(ex);
                         }
                     }
-                }
-                else
-                {
-                    try (BufferedReader input = new BufferedReader(new FileReader(new File(scriptsDirectoryReference.get(), scriptPath))))
-                    {
-                        for (String line = input.readLine(); line != null; line = input.readLine())
-                        {
+                } else {
+                    try (BufferedReader input = new BufferedReader(new FileReader(new File(scriptsDirectoryReference.get(), scriptPath)))) {
+                        for (String line = input.readLine(); line != null; line = input.readLine()) {
                             requires.add(line);
                         }
-                    }
-                    catch (Exception ex)
-                    {
+                    } catch (Exception ex) {
                         getLog().error(ex);
                     }
                 }
             }
-            if (script.extension != null)
-            {
+            if (script.extension != null) {
                 capability += ";sling.resourceType.extensions:List<String>=\"" + script.extension.replace("\"", "\\\"") + "\"";
             }
 
-            if (script.method != null)
-            {
+            if (script.method != null) {
                 capability += ";sling.servlet.methods:List<String>=\"" + script.method.replace("\"", "\\\"") + "\"";
             }
-            if (script.version != null)
-            {
+            if (script.version != null) {
                 capability += ";version:Version=\"" + script.version + "\"";
             }
             capabilities.add(capability);
         }
         List<String> requirements = new ArrayList<>();
-        for (String require : requires)
-        {
+        for (String require : requires) {
             String[] parts = require.split(";");
             String rt = parts[0];
             String filter = "(sling.resourceType=" + rt.replace("\"", "\\\"") + ")";
 
-            if (parts.length > 1)
-            {
+            if (parts.length > 1) {
                 VersionRange range = new VersionRange(parts[1].substring(parts[1].indexOf("=") + 1).replace("\"", "").trim());
                 filter = "(&" + filter + range.toFilterString("version") + ")";
             }
-            if (parts.length > 2)
-            {
+            if (parts.length > 2) {
                 filter = "(&" + filter + "(!(sling.resourceType.selectors=*)))";
             }
             requirements.add("sling.resourceType;filter:=\"" + filter + "\"");
         }
 
-        project.getProperties().setProperty(ScriptingMavenPlugin.class.getPackage().getName() + "." + Constants.PROVIDE_CAPABILITY, String.join(",", capabilities));
-        project.getProperties().setProperty(ScriptingMavenPlugin.class.getPackage().getName() + "." + Constants.REQUIRE_CAPABILITY, String.join(",", requirements));
+        project.getProperties().setProperty(ScriptingMavenPlugin.class.getPackage().getName() + "." + Constants.PROVIDE_CAPABILITY,
+                String.join(",", capabilities));
+        project.getProperties().setProperty(ScriptingMavenPlugin.class.getPackage().getName() + "." + Constants.REQUIRE_CAPABILITY,
+                String.join(",", requirements));
     }
 
     static class Script {
@@ -194,43 +178,33 @@ public class ScriptingMavenPlugin extends AbstractMojo
         result.version = parts.length > 2 ? new Version(parts[1]).toString() : null;
         result.name = parts.length > 2 ? parts[2] : parts[1];
         int idx = result.name.lastIndexOf('.');
-        if (idx != -1)
-        {
+        if (idx != -1) {
             result.scriptExtension = result.name.substring(idx + 1);
             result.name = result.name.substring(0, idx);
-            if (result.scriptExtension.isEmpty())
-            {
+            if (result.scriptExtension.isEmpty()) {
                 result.scriptExtension = null;
             }
         }
 
         idx = result.name.lastIndexOf('.');
-        if (idx != -1)
-        {
+        if (idx != -1) {
             result.extension = result.name.substring(idx + 1);
             result.name = result.name.substring(0, idx);
-            if (result.extension.isEmpty() || result.extension.equalsIgnoreCase("html"))
-            {
+            if (result.extension.isEmpty() || result.extension.equalsIgnoreCase("html")) {
                 result.extension = null;
             }
-        }
-        else
-        {
+        } else {
             result.extension = null;
         }
 
         idx = result.name.indexOf('.');
-        if (idx != -1)
-        {
+        if (idx != -1) {
             String methodString = result.name.substring(0, idx).toUpperCase();
-            if (METHODS.contains(methodString))
-            {
+            if (METHODS.contains(methodString)) {
                 result.method = methodString;
                 result.name = result.name.substring(idx + 1);
             }
-        }
-        else if (METHODS.contains(result.name.toUpperCase()))
-        {
+        } else if (METHODS.contains(result.name.toUpperCase())) {
             result.method = result.name.toUpperCase();
             result.name = "";
         }
