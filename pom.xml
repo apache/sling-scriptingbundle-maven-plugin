@@ -88,6 +88,8 @@
                         <exclude>**/*.iml</exclude>
                         <exclude>**/target/**/*</exclude>
                         <exclude>src/site/markdown/**</exclude>
+                        <exclude>src/test/resources/**/extends</exclude>
+                        <exclude>src/test/resources/**/requires</exclude>
                     </excludes>
                 </configuration>
             </plugin>

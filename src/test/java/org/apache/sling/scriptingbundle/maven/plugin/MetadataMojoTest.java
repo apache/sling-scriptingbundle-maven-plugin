@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.osgi.framework.Constants;
 import org.sonatype.plexus.build.incremental.DefaultBuildContext;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class MetadataMojoTest {
@@ -49,8 +50,9 @@ public class MetadataMojoTest {
     public void testProject1() throws Exception {
         MojoProject mojoProject = getMojoProject(getProjectLocation("project-1"));
         mojoProject.mojo.execute();
-        Properties properties = mojoProject.project.getProperties();
-        assertTrue(properties.containsKey(MetadataMojo.class.getPackage() + "." + Constants.PROVIDE_CAPABILITY));
+        Capabilities capabilities = mojoProject.mojo.getCapabilities();
+        assertEquals(8, capabilities.getProvidedCapabilities().size());
+        assertEquals(2, capabilities.getRequiredCapabilities().size());
     }
 
     private MojoProject getMojoProject(File projectDirectory) throws Exception {

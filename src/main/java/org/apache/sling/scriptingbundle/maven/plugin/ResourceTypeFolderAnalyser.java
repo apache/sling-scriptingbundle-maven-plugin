@@ -24,7 +24,11 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.Log;
@@ -38,6 +42,7 @@ class ResourceTypeFolderAnalyser {
 
     private final Log log;
     private final Path scriptsDirectory;
+    private final ResourceTypeFolderPredicate resourceTypeFolderPredicate = new ResourceTypeFolderPredicate();
 
     ResourceTypeFolderAnalyser(@NotNull Log log, @NotNull Path scriptsDirectory) {
         this.log = log;
@@ -45,12 +50,15 @@ class ResourceTypeFolderAnalyser {
     }
 
     Capabilities getCapabilities(@NotNull Path resourceTypeDirectory) {
-        var providedCapabilities = new ArrayList<ProvidedCapability>();
-        var requiredCapabilities = new ArrayList<RequiredCapability>();
+        var providedCapabilities = new LinkedHashSet<ProvidedCapability>();
+        var requiredCapabilities = new LinkedHashSet<RequiredCapability>();
         String version = null;
         String resourceType = null;
         try {
-            version = Version.parseVersion(resourceTypeDirectory.getFileName().toString()).toString();
+            Path fileName = resourceTypeDirectory.getFileName();
+            if (fileName != null) {
+                version = Version.parseVersion(fileName.toString()).toString();
+            }
         } catch (IllegalArgumentException ignored) {
             // no version
         }
@@ -65,30 +73,35 @@ class ResourceTypeFolderAnalyser {
         if (resourceType != null) {
             String resourceTypeLabel = getResourceTypeLabel(resourceType);
             try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(scriptsDirectory.resolve(resourceTypeDirectory))) {
-                for (Path child : directoryStream) {
-                    if (Files.isRegularFile(child)) {
-                        Path file = child.getFileName();
+                for (Path directoryEntry : directoryStream) {
+                    if (Files.isRegularFile(directoryEntry)) {
+                        Path file = directoryEntry.getFileName();
                         if (file != null) {
-                            String[] scriptNameParts = file.toString().split("\\.");
-                            if (scriptNameParts.length == 1) {
-                                if (MetadataMojo.EXTENDS_FILE.equals(file.toString())) {
-                                    processExtendsFile(resourceType, version, child, providedCapabilities, requiredCapabilities);
-                                } else if (MetadataMojo.REQUIRES_FILE.equals(file.toString())) {
-                                    processRequiresFile(child, requiredCapabilities);
-                                }
+                            if (MetadataMojo.EXTENDS_FILE.equals(file.toString())) {
+                                processExtendsFile(resourceType, version, directoryEntry, providedCapabilities, requiredCapabilities);
+                            } else if (MetadataMojo.REQUIRES_FILE.equals(file.toString())) {
+                                processRequiresFile(directoryEntry, requiredCapabilities);
                             } else {
-
+                                processScriptFile(resourceTypeDirectory, directoryEntry, resourceType, version, resourceTypeLabel,
+                                        providedCapabilities);
                             }
                         }
-                    } else if (Files.isDirectory(child)) {
-
+                    } else if (Files.isDirectory(directoryEntry) && !resourceTypeFolderPredicate.test(directoryEntry)) {
+                        try (Stream<Path> subtree = Files.walk(directoryEntry)) {
+                            Iterator<Path> subtreeIterator = subtree.iterator();
+                            while (subtreeIterator.hasNext()) {
+                                Path subtreeEntry = subtreeIterator.next();
+                                if (Files.isRegularFile(subtreeEntry)) {
+                                    processScriptFile(resourceTypeDirectory, subtreeEntry, resourceType, version, resourceTypeLabel,
+                                            providedCapabilities);
+                                }
+                            }
+                        }
                     }
                 }
             } catch (IOException | IllegalArgumentException e) {
                 log.warn(String.format("Cannot analyser folder %s.", scriptsDirectory.resolve(resourceTypeDirectory).toString()));
-                if (log.isDebugEnabled()) {
-                    log.debug(e);
-                }
+                debug(e);
             }
         }
 
@@ -96,8 +109,8 @@ class ResourceTypeFolderAnalyser {
     }
 
     private void processExtendsFile(@NotNull String resourceType, @Nullable String version, @NotNull Path extendsFile,
-                                    @NotNull ArrayList<ProvidedCapability> providedCapabilities,
-                                    @NotNull ArrayList<RequiredCapability> requiredCapabilities)
+                                    @NotNull Set<ProvidedCapability> providedCapabilities,
+                                    @NotNull Set<RequiredCapability> requiredCapabilities)
             throws IOException {
         List<String> extendResources = Files.readAllLines(extendsFile, StandardCharsets.UTF_8);
         if (extendResources.size() == 1) {
@@ -129,7 +142,7 @@ class ResourceTypeFolderAnalyser {
     }
 
     private void processRequiresFile(@NotNull Path requiresFile,
-                                    @NotNull ArrayList<RequiredCapability> requiredCapabilities)
+                                     @NotNull Set<RequiredCapability> requiredCapabilities)
             throws IOException {
         List<String> requiredResourceTypes = Files.readAllLines(requiresFile, StandardCharsets.UTF_8);
         for (String requiredResourceType : requiredResourceTypes) {
@@ -151,6 +164,49 @@ class ResourceTypeFolderAnalyser {
                 requiredCapabilities.add(requiredBuilder.build());
             }
         }
+    }
+
+    private void processScriptFile(@NotNull Path resourceTypeDirectory, @NotNull Path script, @NotNull String resourceType,
+                                   @Nullable String version, @NotNull String resourceTypeLabel,
+                                   @NotNull Set<ProvidedCapability> providedCapabilities) {
+        Path scriptFile = script.getFileName();
+        if (scriptFile != null) {
+            Path relativeResourceTypeFolder = resourceTypeDirectory.relativize(script);
+            int pathSegments = relativeResourceTypeFolder.getNameCount();
+            ArrayList<String> selectors = new ArrayList<>();
+            if (pathSegments > 1) {
+                for (int i = 0; i < pathSegments - 1; i++) {
+                    selectors.add(relativeResourceTypeFolder.getName(i).toString());
+                }
+            }
+            String[] parts = scriptFile.toString().split("\\.");
+            if (parts.length >= 2) {
+                String method = null;
+                String extension = null;
+                String first = parts[0];
+                if (parts.length >= 3) {
+                    extension = parts[parts.length - 2];
+                }
+                if (!first.equals(resourceTypeLabel)) {
+                    if (MetadataMojo.METHODS.contains(first)) {
+                        method = first;
+                        if (parts.length == 4) {
+                            selectors.add(parts[1]);
+                        }
+                    } else {
+                        selectors.add(first);
+                    }
+                }
+                providedCapabilities.add(ProvidedCapability.builder().withResourceType(resourceType).withVersion(version)
+                        .withSelectors(selectors).withRequestExtension(extension).withRequestMethod(method).build());
+            } else {
+                debug(String.format("Skipping script %s since it either does not target a script engine or it provides too many selector " +
+                        "parts in its name.", script.toString()));
+            }
+        } else {
+            debug(String.format("Skipping path %s since it has 0 elements.", script.toString()));
+        }
+
     }
 
     private String getResourceType(@NotNull Path resourceTypeFolder) {
@@ -185,6 +241,18 @@ class ResourceTypeFolderAnalyser {
             throw new IllegalArgumentException(String.format("Resource type '%s' does not provide a resourceTypeLabel.", resourceType));
         }
         return resourceTypeLabel;
+    }
+
+    private void debug(String message) {
+        if (log.isDebugEnabled()) {
+            log.debug(message);
+        }
+    }
+
+    private void debug(Throwable t) {
+        if (log.isDebugEnabled()) {
+            log.debug(t);
+        }
     }
 
 }

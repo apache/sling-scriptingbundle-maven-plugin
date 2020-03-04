@@ -18,6 +18,8 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.scriptingbundle.maven.plugin;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
@@ -30,14 +32,17 @@ class ProvidedCapability {
     private final String version;
     private final String requestExtension;
     private final String requestMethod;
+    private final List<String> selectors;
 
     private ProvidedCapability(@NotNull String resourceType, @Nullable String extendsResourceType,
-                               @Nullable String version, @Nullable String requestExtension, @Nullable String requestMethod) {
+                               @Nullable String version, @Nullable String requestExtension, @Nullable String requestMethod,
+                               @NotNull List<String> selectors) {
         this.resourceType = resourceType;
         this.extendsResourceType = extendsResourceType;
         this.version = version;
         this.requestExtension = requestExtension;
         this.requestMethod = requestMethod;
+        this.selectors = selectors;
     }
 
     static Builder builder() {
@@ -69,9 +74,14 @@ class ProvidedCapability {
         return requestMethod;
     }
 
+    @NotNull
+    public List<String> getSelectors() {
+        return selectors;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(resourceType, version, requestExtension, requestMethod);
+        return Objects.hash(resourceType, version, requestExtension, requestMethod, selectors);
     }
 
     @Override
@@ -81,15 +91,17 @@ class ProvidedCapability {
         }
         if (obj instanceof ProvidedCapability) {
             ProvidedCapability other = (ProvidedCapability) obj;
-            return Objects.equals(resourceType, other.resourceType) && Objects.equals(version, other.version) && Objects.equals(requestExtension, other.requestExtension) && Objects.equals(requestMethod, other.requestMethod);
+            return Objects.equals(resourceType, other.resourceType) && Objects.equals(version, other.version) &&
+                    Objects.equals(requestExtension, other.requestExtension) && Objects.equals(requestMethod, other.requestMethod) &&
+                    Objects.equals(selectors, other.selectors);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return String.format("%s{resourceType=%s, version=%s, requestExtension=%s, requestMethod=%s}", this.getClass().getSimpleName(),
-                resourceType, version, requestExtension, requestMethod);
+        return String.format("%s{resourceType=%s, version=%s, selectors=%s, requestExtension=%s, requestMethod=%s}",
+                this.getClass().getSimpleName(), resourceType, version, selectors, requestExtension, requestMethod);
     }
 
     static class Builder {
@@ -98,6 +110,7 @@ class ProvidedCapability {
         private String version;
         private String requestExtension;
         private String requestMethod;
+        private List<String> selectors = Collections.emptyList();
 
         Builder withResourceType(String resourceType) {
             if (StringUtils.isEmpty(resourceType)) {
@@ -127,8 +140,16 @@ class ProvidedCapability {
             return this;
         }
 
+        Builder withSelectors(List<String> selectors) {
+            if (selectors == null) {
+                throw new NullPointerException("The resourceType selectors list cannot be null.");
+            }
+            this.selectors = selectors;
+            return this;
+        }
+
         ProvidedCapability build() {
-            return new ProvidedCapability(resourceType, extendsResourceType, version, requestExtension, requestMethod);
+            return new ProvidedCapability(resourceType, extendsResourceType, version, requestExtension, requestMethod, selectors);
         }
     }
 }

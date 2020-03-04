@@ -19,23 +19,23 @@
 package org.apache.sling.scriptingbundle.maven.plugin;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 public class Capabilities {
 
-    private final List<ProvidedCapability> providedCapabilities;
-    private final List<RequiredCapability> requiredCapabilities;
+    private final Set<ProvidedCapability> providedCapabilities;
+    private final Set<RequiredCapability> requiredCapabilities;
 
-    Capabilities(List<ProvidedCapability> providedCapabilities, List<RequiredCapability> requiredCapabilities) {
+    Capabilities(Set<ProvidedCapability> providedCapabilities, Set<RequiredCapability> requiredCapabilities) {
         this.providedCapabilities = providedCapabilities;
         this.requiredCapabilities = requiredCapabilities;
     }
 
-    public List<ProvidedCapability> getProvidedCapabilities() {
-        return Collections.unmodifiableList(providedCapabilities);
+    public Set<ProvidedCapability> getProvidedCapabilities() {
+        return Collections.unmodifiableSet(providedCapabilities);
     }
 
-    public List<RequiredCapability> getRequiredCapabilities() {
-        return Collections.unmodifiableList(requiredCapabilities);
+    public Set<RequiredCapability> getRequiredCapabilities() {
+        return Collections.unmodifiableSet(requiredCapabilities);
     }
 }
