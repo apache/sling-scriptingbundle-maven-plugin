@@ -236,6 +236,8 @@ class ResourceTypeFolderAnalyser {
             if (lastIndex < resourceType.length() - 2) {
                 resourceTypeLabel = resourceType.substring(++lastIndex);
             }
+        } else {
+            resourceTypeLabel = resourceType;
         }
         if (StringUtils.isEmpty(resourceTypeLabel)) {
             throw new IllegalArgumentException(String.format("Resource type '%s' does not provide a resourceTypeLabel.", resourceType));

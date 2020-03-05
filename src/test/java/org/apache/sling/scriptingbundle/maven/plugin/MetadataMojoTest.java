@@ -90,7 +90,10 @@ public class MetadataMojoTest {
                         , "200")).build(),
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(Arrays.asList("depth1"
                         , "depth2", "100")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withRequestMethod("GET").build()
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withRequestMethod("GET").build(),
+
+                // sling
+                ProvidedCapability.builder().withResourceType("sling").build()
         ));
         Set<ProvidedCapability> provided = new HashSet<>(capabilities.getProvidedCapabilities());
         assertEquals(pExpected.size(), provided.size());
