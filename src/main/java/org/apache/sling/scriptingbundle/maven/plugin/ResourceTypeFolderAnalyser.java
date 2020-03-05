@@ -51,8 +51,8 @@ class ResourceTypeFolderAnalyser {
     }
 
     Capabilities getCapabilities(@NotNull Path resourceTypeDirectory) {
-        var providedCapabilities = new LinkedHashSet<ProvidedCapability>();
-        var requiredCapabilities = new LinkedHashSet<RequiredCapability>();
+        Set<ProvidedCapability> providedCapabilities = new LinkedHashSet<>();
+        Set<RequiredCapability> requiredCapabilities = new LinkedHashSet<>();
         String version = null;
         String resourceType = null;
         try {

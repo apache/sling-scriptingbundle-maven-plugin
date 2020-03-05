@@ -20,8 +20,8 @@ package org.apache.sling.scriptingbundle.maven.plugin;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.execution.MavenSession;
@@ -52,59 +52,59 @@ public class MetadataMojoTest {
         mojoProject.mojo.execute();
         Capabilities capabilities = mojoProject.mojo.getCapabilities();
 
-        var pExpected = Set.of(
+        Set<ProvidedCapability> pExpected = new HashSet<>(Arrays.asList(
                 // org/apache/sling/bar/1.0.0
                 ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
                         , "100")).build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
                         , "200")).build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
                         , "depth2", "100")).build(),
 
                 // org/apache/sling/foo
                 ProvidedCapability.builder().withResourceType("org/apache/sling/foo").build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withSelectors(Arrays.asList("depth1"
                         , "100")).build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withSelectors(Arrays.asList("depth1"
                         , "200")).build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withSelectors(Arrays.asList("depth1"
                         , "depth2", "100")).build(),
 
                 // org.apache.sling.foobar/1.0.0
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").build(),
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withExtendsResourceType(
                         "org/apache/sling/bar").build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
                         , "100")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
                         , "200")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
                         , "depth2", "100")).build(),
 
                 // org.apache.sling.foobar
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withExtendsResourceType("org/apache/sling/bar").build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(Arrays.asList("depth1"
                         , "100")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(Arrays.asList("depth1"
                         , "200")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(List.of("depth1"
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(Arrays.asList("depth1"
                         , "depth2", "100")).build(),
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withRequestMethod("GET").build()
-        );
-        var provided = new HashSet<>(capabilities.getProvidedCapabilities());
+        ));
+        Set<ProvidedCapability> provided = new HashSet<>(capabilities.getProvidedCapabilities());
         assertEquals(pExpected.size(), provided.size());
         for (ProvidedCapability capability : pExpected) {
             boolean removed = provided.remove(capability);
             assertTrue(String.format("Did not find expected provided capability %s.", capability), removed);
         }
 
-        var rExpected = Set.of(
+        Set<RequiredCapability> rExpected = new HashSet<>(Arrays.asList(
                 RequiredCapability.builder().withResourceType("sling/default").withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build(),
                 RequiredCapability.builder().withResourceType("org/apache/sling/bar").build(),
                 RequiredCapability.builder().withResourceType("org/apache/sling/bar").withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
-        );
-        var required = new HashSet<>(capabilities.getRequiredCapabilities());
+        ));
+        Set<RequiredCapability> required = new HashSet<>(capabilities.getRequiredCapabilities());
         assertEquals(rExpected.size(), required.size());
         for (RequiredCapability capability : rExpected) {
             boolean removed = required.remove(capability);
