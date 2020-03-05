@@ -76,12 +76,12 @@ class ProvidedCapability {
 
     @NotNull
     public List<String> getSelectors() {
-        return selectors;
+        return Collections.unmodifiableList(selectors);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(resourceType, version, requestExtension, requestMethod, selectors);
+        return Objects.hash(resourceType, version, requestExtension, extendsResourceType, requestMethod, selectors);
     }
 
     @Override
@@ -92,7 +92,8 @@ class ProvidedCapability {
         if (obj instanceof ProvidedCapability) {
             ProvidedCapability other = (ProvidedCapability) obj;
             return Objects.equals(resourceType, other.resourceType) && Objects.equals(version, other.version) &&
-                    Objects.equals(requestExtension, other.requestExtension) && Objects.equals(requestMethod, other.requestMethod) &&
+                    Objects.equals(requestExtension, other.requestExtension) && Objects.equals(extendsResourceType,
+                    other.extendsResourceType) && Objects.equals(requestMethod, other.requestMethod) &&
                     Objects.equals(selectors, other.selectors);
         }
         return false;
@@ -100,8 +101,8 @@ class ProvidedCapability {
 
     @Override
     public String toString() {
-        return String.format("%s{resourceType=%s, version=%s, selectors=%s, requestExtension=%s, requestMethod=%s}",
-                this.getClass().getSimpleName(), resourceType, version, selectors, requestExtension, requestMethod);
+        return String.format("%s{resourceType=%s, version=%s, selectors=%s, requestExtension=%s, requestMethod=%s, extendsResourceType=%s}",
+                this.getClass().getSimpleName(), resourceType, version, selectors, requestExtension, requestMethod, extendsResourceType);
     }
 
     static class Builder {

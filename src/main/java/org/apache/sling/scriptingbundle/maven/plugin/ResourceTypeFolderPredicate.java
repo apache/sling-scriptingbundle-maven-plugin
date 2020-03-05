@@ -24,9 +24,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
+import org.apache.maven.plugin.logging.Log;
 import org.osgi.framework.Version;
 
 public class ResourceTypeFolderPredicate implements Predicate<Path> {
+
+    private Log log;
+
+    public ResourceTypeFolderPredicate(Log log) {
+        this.log = log;
+    }
 
     @Override
     public boolean test(Path folder) {
@@ -67,8 +74,8 @@ public class ResourceTypeFolderPredicate implements Predicate<Path> {
                         }
                     }
                 }
-            } catch (IOException ignored) {
-                // ignore; will return false anyways
+            } catch (IOException e) {
+                log.error(String.format("Could not check if folder %s denotes a resource type.", folder.toString()), e);
             }
         }
         return false;

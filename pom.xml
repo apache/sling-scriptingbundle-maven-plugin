@@ -90,6 +90,7 @@
                         <exclude>src/site/markdown/**</exclude>
                         <exclude>src/test/resources/**/extends</exclude>
                         <exclude>src/test/resources/**/requires</exclude>
+                        <exclude>src/test/resources/**/wrongbar</exclude>
                     </excludes>
                 </configuration>
             </plugin>

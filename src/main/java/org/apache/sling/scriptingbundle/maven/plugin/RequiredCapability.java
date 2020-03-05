@@ -18,6 +18,8 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.scriptingbundle.maven.plugin;
 
+import java.util.Objects;
+
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,6 +53,23 @@ public class RequiredCapability {
     public String toString() {
         return String.format("%s{resourceType=%s, versionRange=%s}", this.getClass().getSimpleName(),
                 resourceType, versionRange);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(resourceType, versionRange);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof RequiredCapability) {
+            RequiredCapability other = (RequiredCapability) obj;
+            return Objects.equals(resourceType, other.resourceType) && Objects.equals(versionRange, other.versionRange);
+        }
+        return false;
     }
 
     static class Builder {

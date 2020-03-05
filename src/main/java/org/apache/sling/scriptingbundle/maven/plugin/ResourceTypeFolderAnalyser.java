@@ -42,11 +42,12 @@ class ResourceTypeFolderAnalyser {
 
     private final Log log;
     private final Path scriptsDirectory;
-    private final ResourceTypeFolderPredicate resourceTypeFolderPredicate = new ResourceTypeFolderPredicate();
+    private final ResourceTypeFolderPredicate resourceTypeFolderPredicate;
 
     ResourceTypeFolderAnalyser(@NotNull Log log, @NotNull Path scriptsDirectory) {
         this.log = log;
         this.scriptsDirectory = scriptsDirectory;
+        this.resourceTypeFolderPredicate = new ResourceTypeFolderPredicate(log);
     }
 
     Capabilities getCapabilities(@NotNull Path resourceTypeDirectory) {
@@ -60,7 +61,7 @@ class ResourceTypeFolderAnalyser {
                 version = Version.parseVersion(fileName.toString()).toString();
             }
         } catch (IllegalArgumentException ignored) {
-            // no version
+            log.debug("No resourceType version detected in " + scriptsDirectory.resolve(resourceTypeDirectory).toString());
         }
         if (StringUtils.isNotEmpty(version)) {
             Path parent = resourceTypeDirectory.getParent();
@@ -100,8 +101,7 @@ class ResourceTypeFolderAnalyser {
                     }
                 }
             } catch (IOException | IllegalArgumentException e) {
-                log.warn(String.format("Cannot analyser folder %s.", scriptsDirectory.resolve(resourceTypeDirectory).toString()));
-                debug(e);
+                log.warn(String.format("Cannot analyse folder %s.", scriptsDirectory.resolve(resourceTypeDirectory).toString()), e);
             }
         }
 
@@ -129,7 +129,7 @@ class ResourceTypeFolderAnalyser {
                         RequiredCapability.builder().withResourceType(extendedResourceType);
                 try {
                     if (extendedResourceTypeVersion != null) {
-                        requiredBuilder.withVersionRange(VersionRange.valueOf(extendedResourceTypeVersion));
+                        requiredBuilder.withVersionRange(VersionRange.valueOf(extendedResourceTypeVersion.substring(extendedResourceTypeVersion.indexOf('=') + 1)));
                     }
                 } catch (IllegalArgumentException ignored) {
                     log.warn(String.format("Invalid version range '%s' defined for extended resourceType '%s'" +
@@ -154,7 +154,7 @@ class ResourceTypeFolderAnalyser {
                         RequiredCapability.builder().withResourceType(resourceType);
                 try {
                     if (version != null) {
-                        requiredBuilder.withVersionRange(VersionRange.valueOf(version));
+                        requiredBuilder.withVersionRange(VersionRange.valueOf(version.substring(version.indexOf('=') + 1)));
                     }
                 } catch (IllegalArgumentException ignored) {
                     log.warn(String.format("Invalid version range '%s' defined for required resourceType '%s'" +
@@ -180,7 +180,7 @@ class ResourceTypeFolderAnalyser {
                 }
             }
             String[] parts = scriptFile.toString().split("\\.");
-            if (parts.length >= 2) {
+            if (parts.length >= 2 && parts.length <= 4) {
                 String method = null;
                 String extension = null;
                 String first = parts[0];
@@ -200,11 +200,11 @@ class ResourceTypeFolderAnalyser {
                 providedCapabilities.add(ProvidedCapability.builder().withResourceType(resourceType).withVersion(version)
                         .withSelectors(selectors).withRequestExtension(extension).withRequestMethod(method).build());
             } else {
-                debug(String.format("Skipping script %s since it either does not target a script engine or it provides too many selector " +
-                        "parts in its name.", script.toString()));
+                log.warn(String.format("Skipping script %s since it either does not target a script engine or it provides too many " +
+                        "selector parts in its name.", script.toString()));
             }
         } else {
-            debug(String.format("Skipping path %s since it has 0 elements.", script.toString()));
+            log.warn(String.format("Skipping path %s since it has 0 elements.", script.toString()));
         }
 
     }
@@ -242,17 +242,4 @@ class ResourceTypeFolderAnalyser {
         }
         return resourceTypeLabel;
     }
-
-    private void debug(String message) {
-        if (log.isDebugEnabled()) {
-            log.debug(message);
-        }
-    }
-
-    private void debug(Throwable t) {
-        if (log.isDebugEnabled()) {
-            log.debug(t);
-        }
-    }
-
 }

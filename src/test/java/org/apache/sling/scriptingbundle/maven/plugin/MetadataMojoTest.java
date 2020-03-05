@@ -20,18 +20,18 @@ package org.apache.sling.scriptingbundle.maven.plugin;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.Properties;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.testing.MojoRule;
-import org.apache.maven.plugin.testing.SilentLog;
 import org.apache.maven.project.MavenProject;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.osgi.framework.Constants;
-import org.sonatype.plexus.build.incremental.DefaultBuildContext;
+import org.osgi.framework.VersionRange;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -51,26 +51,79 @@ public class MetadataMojoTest {
         MojoProject mojoProject = getMojoProject(getProjectLocation("project-1"));
         mojoProject.mojo.execute();
         Capabilities capabilities = mojoProject.mojo.getCapabilities();
-        assertEquals(8, capabilities.getProvidedCapabilities().size());
-        assertEquals(2, capabilities.getRequiredCapabilities().size());
+
+        var pExpected = Set.of(
+                // org/apache/sling/bar/1.0.0
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                        , "100")).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                        , "200")).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                        , "depth2", "100")).build(),
+
+                // org/apache/sling/foo
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withSelectors(List.of("depth1"
+                        , "100")).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withSelectors(List.of("depth1"
+                        , "200")).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withSelectors(List.of("depth1"
+                        , "depth2", "100")).build(),
+
+                // org.apache.sling.foobar/1.0.0
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withExtendsResourceType(
+                        "org/apache/sling/bar").build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                        , "100")).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                        , "200")).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withSelectors(List.of("depth1"
+                        , "depth2", "100")).build(),
+
+                // org.apache.sling.foobar
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withExtendsResourceType("org/apache/sling/bar").build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(List.of("depth1"
+                        , "100")).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(List.of("depth1"
+                        , "200")).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withSelectors(List.of("depth1"
+                        , "depth2", "100")).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withRequestMethod("GET").build()
+        );
+        var provided = new HashSet<>(capabilities.getProvidedCapabilities());
+        assertEquals(pExpected.size(), provided.size());
+        for (ProvidedCapability capability : pExpected) {
+            boolean removed = provided.remove(capability);
+            assertTrue(String.format("Did not find expected provided capability %s.", capability), removed);
+        }
+
+        var rExpected = Set.of(
+                RequiredCapability.builder().withResourceType("sling/default").withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build(),
+                RequiredCapability.builder().withResourceType("org/apache/sling/bar").build(),
+                RequiredCapability.builder().withResourceType("org/apache/sling/bar").withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
+        );
+        var required = new HashSet<>(capabilities.getRequiredCapabilities());
+        assertEquals(rExpected.size(), required.size());
+        for (RequiredCapability capability : rExpected) {
+            boolean removed = required.remove(capability);
+            assertTrue(String.format("Did not find expected required capability %s.", capability), removed);
+        }
     }
 
     private MojoProject getMojoProject(File projectDirectory) throws Exception {
-        SilentLog log = new SilentLog();
-        DefaultBuildContext buildContext = new DefaultBuildContext();
-        buildContext.enableLogging(log);
         MavenProject project = mojoRule.readMavenProject(projectDirectory);
         MavenSession session = mojoRule.newMavenSession(project);
         MojoExecution execution = mojoRule.newMojoExecution("metadata");
         MetadataMojo validateMojo = (MetadataMojo) mojoRule.lookupConfiguredMojo(session, execution);
-        validateMojo.setLog(log);
         MojoProject mojoProject = new MojoProject();
         mojoProject.mojo = validateMojo;
         mojoProject.project = project;
         return mojoProject;
     }
 
-    private class MojoProject {
+    private static class MojoProject {
         MetadataMojo mojo;
         MavenProject project;
     }
