@@ -16,13 +16,3 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-<FindBugsFilter>
-    <!-- false positive in Java 11, see https://github.com/spotbugs/spotbugs/issues/756 -->
-    <Match>
-        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
-    </Match>
-    <Match>
-        <!-- false positive - https://github.com/spotbugs/spotbugs/issues/259 -->
-        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
-    </Match>
-</FindBugsFilter>

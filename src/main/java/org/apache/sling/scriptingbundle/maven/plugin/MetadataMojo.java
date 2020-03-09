@@ -23,12 +23,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.script.ScriptEngineFactory;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -42,8 +46,9 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.VersionRange;
 
 /**
- * The {@code metadata} goal will generate two Maven project properties, namely {@code org.apache.sling.scriptingbundle.maven.plugin
- * .Require-Capability} and {@code org.apache.sling.scriptingbundle.maven.plugin.Provide-Capability} which can be used to generate the
+ * The {@code metadata} goal will generate two Maven project properties, namely
+ * {@code org.apache.sling.scriptingbundle.maven.plugin.Require-Capability} and
+ * {@code org.apache.sling.scriptingbundle.maven.plugin.Provide-Capability} which can be used to generate the
  * corresponding OSGi bundle headers for bundles providing scripts executable by a {@link javax.script.ScriptEngine}.
  */
 @Mojo(name = "metadata",
@@ -62,6 +67,38 @@ public class MetadataMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.basedir}/src/main/resources/javax.script")
     private String scriptsDirectory;
 
+    /**
+     * Allows overriding the default extension to script engine mapping, in order to correctly generate the
+     * {@code sling.resourceType;scriptEngine} {@code Provide-Capability} attribute value. When configuring this mapping, please make
+     * sure to use the script extension as the key and one of the Script Engine's name (obtained from
+     * {@link ScriptEngineFactory#getNames()}) as the value.
+     *
+     * <p>The following list represents the default extension to Script Engine mapping:</p>
+     * <dl>
+     *     <dt>ftl</dt>
+     *     <dd>freemarker</dd>
+     *
+     *     <dt>gst</dt>
+     *     <dd>gstring</dd>
+     *
+     *     <dt>html</dt>
+     *     <dd>htl</dd>
+     *
+     *     <dt>java</dt>
+     *     <dd>java</dd>
+     *
+     *     <dt>esp, ecma</dt>
+     *     <dd>rhino</dd>
+     *
+     *     <dt>jsp, jspf, jspx</dt>
+     *     <dd>jsp</dd>
+     * </dl>
+     *
+     * @since 0.2.0
+     */
+    @Parameter
+    private Map<String, String> scriptEngineMappings;
+
     static final Set<String> METHODS = new HashSet<>(Arrays.asList("TRACE", "OPTIONS", "GET", "HEAD", "POST", "PUT",
             "DELETE", "PATCH"));
     static final String EXTENDS_FILE = "extends";
@@ -72,6 +109,25 @@ public class MetadataMojo extends AbstractMojo {
     static final String CAPABILITY_METHODS_AT = "sling.servlet.methods:List<String>";
     static final String CAPABILITY_VERSION_AT = "version:Version";
     static final String CAPABILITY_EXTENDS_AT = "extends";
+    static final String CAPABILITY_SCRIPT_ENGINE_AT = "scriptEngine";
+    static final Map<String, String> DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING;
+
+    static {
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING = new HashMap<>();
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("ftl", "freemarker");
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("gst", "gstring");
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("html", "htl");
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("java", "java");
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("esp", "rhino");
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("ecma", "rhino");
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("jsp", "jsp");
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("jspf", "jsp");
+        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("jspx", "jsp");
+        /*
+         * commented out since Thymeleaf uses the same 'html' extension like HTL
+         */
+//        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("html", "thymeleaf");
+    }
 
     private Capabilities capabilities;
 
@@ -98,7 +154,11 @@ public class MetadataMojo extends AbstractMojo {
                         .filter(new ResourceTypeFolderPredicate(getLog())).collect(Collectors.toList());
 
         getLog().info("Detected resource type directories: " + resourceTypeDirectories);
-        capabilities = generateCapabilities(root, resourceTypeDirectories);
+        Map<String, String> mappings = new HashMap<>(DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING);
+        if (scriptEngineMappings != null) {
+            mappings.putAll(scriptEngineMappings);
+        }
+        capabilities = generateCapabilities(root, resourceTypeDirectories, mappings);
         String providedCapabilitiesDefinition = getProvidedCapabilitiesString(capabilities);
         String requiredCapabilitiesDefinition = getRequiredCapabilitiesString(capabilities);
         project.getProperties().put(this.getClass().getPackage().getName() + "." + Constants.PROVIDE_CAPABILITY,
@@ -108,12 +168,13 @@ public class MetadataMojo extends AbstractMojo {
     }
 
     @NotNull
-    private Capabilities generateCapabilities(@NotNull String root, @NotNull List<Path> resourceTypeDirectories) {
+    private Capabilities generateCapabilities(@NotNull String root, @NotNull List<Path> resourceTypeDirectories, @NotNull Map<String,
+            String> scriptEngineMappings) {
         ResourceTypeFolderAnalyser analyser = new ResourceTypeFolderAnalyser(getLog(), Paths.get(root));
         Set<ProvidedCapability> providedCapabilities = new LinkedHashSet<>();
         Set<RequiredCapability> requiredCapabilities = new LinkedHashSet<>();
         for (Path resourceTypeDirectory : resourceTypeDirectories) {
-            Capabilities resourceTypeCapabilities = analyser.getCapabilities(resourceTypeDirectory);
+            Capabilities resourceTypeCapabilities = analyser.getCapabilities(resourceTypeDirectory, scriptEngineMappings);
             providedCapabilities.addAll(resourceTypeCapabilities.getProvidedCapabilities());
             requiredCapabilities.addAll(resourceTypeCapabilities.getRequiredCapabilities());
         }
@@ -128,6 +189,10 @@ public class MetadataMojo extends AbstractMojo {
         for (ProvidedCapability capability : capabilities.getProvidedCapabilities()) {
             builder.append(CAPABILITY_NS).append(";");
             builder.append(CAPABILITY_NS).append("=").append("\"").append(capability.getResourceType()).append("\"");
+            Optional.ofNullable(capability.getScriptEngine()).ifPresent(scriptEngine ->
+                    builder.append(";")
+                            .append(CAPABILITY_SCRIPT_ENGINE_AT).append("=").append("\"").append(scriptEngine).append("\"")
+            );
             Optional.ofNullable(capability.getVersion()).ifPresent(version ->
                     builder.append(";")
                             .append(CAPABILITY_VERSION_AT).append("=").append("\"").append(version).append("\"")

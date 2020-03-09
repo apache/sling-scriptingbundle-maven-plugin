@@ -28,16 +28,18 @@ import org.jetbrains.annotations.Nullable;
 
 class ProvidedCapability {
     private final String resourceType;
+    private final String scriptEngine;
     private final String extendsResourceType;
     private final String version;
     private final String requestExtension;
     private final String requestMethod;
     private final List<String> selectors;
 
-    private ProvidedCapability(@NotNull String resourceType, @Nullable String extendsResourceType,
+    private ProvidedCapability(@NotNull String resourceType, @Nullable String scriptEngine, @Nullable String extendsResourceType,
                                @Nullable String version, @Nullable String requestExtension, @Nullable String requestMethod,
                                @NotNull List<String> selectors) {
         this.resourceType = resourceType;
+        this.scriptEngine = scriptEngine;
         this.extendsResourceType = extendsResourceType;
         this.version = version;
         this.requestExtension = requestExtension;
@@ -52,6 +54,11 @@ class ProvidedCapability {
     @NotNull
     public String getResourceType() {
         return resourceType;
+    }
+
+    @Nullable
+    public String getScriptEngine() {
+        return scriptEngine;
     }
 
     @Nullable
@@ -81,7 +88,7 @@ class ProvidedCapability {
 
     @Override
     public int hashCode() {
-        return Objects.hash(resourceType, version, requestExtension, extendsResourceType, requestMethod, selectors);
+        return Objects.hash(resourceType, scriptEngine, version, requestExtension, extendsResourceType, requestMethod, selectors);
     }
 
     @Override
@@ -91,9 +98,9 @@ class ProvidedCapability {
         }
         if (obj instanceof ProvidedCapability) {
             ProvidedCapability other = (ProvidedCapability) obj;
-            return Objects.equals(resourceType, other.resourceType) && Objects.equals(version, other.version) &&
-                    Objects.equals(requestExtension, other.requestExtension) && Objects.equals(extendsResourceType,
-                    other.extendsResourceType) && Objects.equals(requestMethod, other.requestMethod) &&
+            return Objects.equals(resourceType, other.resourceType) && Objects.equals(scriptEngine, other.scriptEngine) &&
+                    Objects.equals(version, other.version) && Objects.equals(requestExtension, other.requestExtension) &&
+                    Objects.equals(extendsResourceType, other.extendsResourceType) && Objects.equals(requestMethod, other.requestMethod) &&
                     Objects.equals(selectors, other.selectors);
         }
         return false;
@@ -101,12 +108,15 @@ class ProvidedCapability {
 
     @Override
     public String toString() {
-        return String.format("%s{resourceType=%s, version=%s, selectors=%s, requestExtension=%s, requestMethod=%s, extendsResourceType=%s}",
-                this.getClass().getSimpleName(), resourceType, version, selectors, requestExtension, requestMethod, extendsResourceType);
+        return String.format(
+            "%s{resourceType=%s, scriptEngine=%s, version=%s, selectors=%s, requestExtension=%s, requestMethod=%s, extendsResourceType=%s}",
+            this.getClass().getSimpleName(), resourceType, scriptEngine, version, selectors, requestExtension, requestMethod, extendsResourceType
+        );
     }
 
     static class Builder {
         private String resourceType;
+        private String scriptEngine;
         private String extendsResourceType;
         private String version;
         private String requestExtension;
@@ -118,6 +128,11 @@ class ProvidedCapability {
                 throw new NullPointerException("The script's resourceType cannot be null or empty.");
             }
             this.resourceType = resourceType;
+            return this;
+        }
+
+        Builder withScriptEngine(String scriptEngine) {
+            this.scriptEngine = scriptEngine;
             return this;
         }
 
@@ -150,7 +165,8 @@ class ProvidedCapability {
         }
 
         ProvidedCapability build() {
-            return new ProvidedCapability(resourceType, extendsResourceType, version, requestExtension, requestMethod, selectors);
+            return new ProvidedCapability(resourceType, scriptEngine, extendsResourceType, version, requestExtension, requestMethod,
+                    selectors);
         }
     }
 }
