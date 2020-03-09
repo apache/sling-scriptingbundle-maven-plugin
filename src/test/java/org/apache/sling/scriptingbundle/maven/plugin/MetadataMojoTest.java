@@ -31,7 +31,6 @@ import org.apache.maven.project.MavenProject;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.osgi.framework.Constants;
 import org.osgi.framework.VersionRange;
 
 import static org.junit.Assert.assertEquals;
@@ -116,36 +115,6 @@ public class MetadataMojoTest {
             boolean removed = required.remove(capability);
             assertTrue(String.format("Did not find expected required capability %s.", capability), removed);
         }
-
-        assertEquals(
-        "sling.resourceType;sling.resourceType=\"sling\";scriptEngine=\"htl\"," +
-                "sling.resourceType;sling.resourceType=\"org/apache/sling/foo\";scriptEngine=\"htl\"," +
-                "sling.resourceType;sling.resourceType=\"org/apache/sling/foo\";scriptEngine=\"htl\";sling.resourceType.selectors:List<String>=\"depth1,depth2,100\"," +
-                "sling.resourceType;sling.resourceType=\"org/apache/sling/foo\";scriptEngine=\"htl\";sling.resourceType.selectors:List<String>=\"depth1,100\"," +
-                "sling.resourceType;sling.resourceType=\"org/apache/sling/foo\";scriptEngine=\"htl\";sling.resourceType.selectors:List<String>=\"depth1,200\"," +
-                "sling.resourceType;sling.resourceType=\"org/apache/sling/bar\";scriptEngine=\"htl\";version:Version=\"1.0.0\"," +
-                "sling.resourceType;sling.resourceType=\"org/apache/sling/bar\";scriptEngine=\"htl\";version:Version=\"1.0.0\";sling.resourceType.selectors:List<String>=\"depth1,depth2,100\"," +
-                "sling.resourceType;sling.resourceType=\"org/apache/sling/bar\";scriptEngine=\"htl\";version:Version=\"1.0.0\";sling.resourceType.selectors:List<String>=\"depth1,100\"," +
-                "sling.resourceType;sling.resourceType=\"org/apache/sling/bar\";scriptEngine=\"htl\";version:Version=\"1.0.0\";sling.resourceType.selectors:List<String>=\"depth1,200\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";version:Version=\"1.0.0\";extends=\"org/apache/sling/bar\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";version:Version=\"1.0.0\";sling.resourceType.selectors:List<String>=\"depth1,depth2,100\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";version:Version=\"1.0.0\";sling.resourceType.selectors:List<String>=\"depth1,100\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";version:Version=\"1.0.0\";sling.resourceType.selectors:List<String>=\"depth1,200\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";version:Version=\"1.0.0\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";extends=\"org/apache/sling/bar\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";sling.resourceType.extensions:List<String>=\"txt\";sling.resourceType.selectors:List<String>=\"test\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";sling.resourceType.selectors:List<String>=\"depth1,depth2,100\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";sling.resourceType.selectors:List<String>=\"depth1,100\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";sling.resourceType.selectors:List<String>=\"depth1,200\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";sling.servlet.methods:List<String>=\"GET\";sling.resourceType.extensions:List<String>=\"txt\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";sling.servlet.methods:List<String>=\"GET\"," +
-                "sling.resourceType;sling.resourceType=\"org.apache.sling.foobar\";scriptEngine=\"htl\";sling.servlet.methods:List<String>=\"GET\";sling.resourceType.selectors:List<String>=\"test\"",
-                mojoProject.project.getProperties().getProperty(MetadataMojo.class.getPackage().getName() + "." + Constants.PROVIDE_CAPABILITY));
-        assertEquals(
-        "sling.resourceType;filter:=\"(&(!(sling.resourceType.selectors=*))(sling.resourceType=org/apache/sling/bar))\"," +
-                "sling.resourceType;filter:=\"(&(!(sling.resourceType.selectors=*))(&(&(version>=1.0.0)(!(version>=2.0.0)))(sling.resourceType=sling/default)))\"," +
-                "sling.resourceType;filter:=\"(&(!(sling.resourceType.selectors=*))(&(&(version>=1.0.0)(!(version>=2.0.0)))(sling.resourceType=org/apache/sling/bar)))\"",
-                mojoProject.project.getProperties().getProperty(MetadataMojo.class.getPackage().getName() + "." + Constants.REQUIRE_CAPABILITY));
     }
 
     private MojoProject getMojoProject(File projectDirectory) throws Exception {
