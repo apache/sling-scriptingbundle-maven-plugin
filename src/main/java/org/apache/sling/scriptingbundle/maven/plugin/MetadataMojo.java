@@ -64,7 +64,7 @@ public class MetadataMojo extends AbstractMojo {
      *
      * @since 0.1.0
      */
-    @Parameter(defaultValue = "${project.basedir}/src/main/resources/javax.script")
+    @Parameter(defaultValue = "${project.build.scriptSourceDirectory}")
     private String scriptsDirectory;
 
     /**
