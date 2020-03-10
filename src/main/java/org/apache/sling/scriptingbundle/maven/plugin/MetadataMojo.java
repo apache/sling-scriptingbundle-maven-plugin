@@ -64,8 +64,8 @@ public class MetadataMojo extends AbstractMojo {
      *
      * @since 0.1.0
      */
-    @Parameter(defaultValue = "${project.build.scriptSourceDirectory}")
-    private String scriptsDirectory;
+    @Parameter(property = "scriptingbundle.sourceDirectory", defaultValue = "${project.build.scriptSourceDirectory}")
+    private String sourceDirectory;
 
     /**
      * Allows overriding the default extension to script engine mapping, in order to correctly generate the
@@ -132,11 +132,11 @@ public class MetadataMojo extends AbstractMojo {
     private Capabilities capabilities;
 
     public void execute() throws MojoExecutionException {
-        File sdFile = new File(scriptsDirectory);
+        File sdFile = new File(sourceDirectory);
         if (!sdFile.exists()) {
-            sdFile = new File(project.getBasedir(), scriptsDirectory);
+            sdFile = new File(project.getBasedir(), sourceDirectory);
             if (!sdFile.exists()) {
-                throw new MojoExecutionException("Cannot find file " + scriptsDirectory + ".");
+                throw new MojoExecutionException("Cannot find file " + sourceDirectory + ".");
             }
         }
         final String root = sdFile.getAbsolutePath();
