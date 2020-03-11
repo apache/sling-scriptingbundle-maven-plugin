@@ -182,69 +182,56 @@ class ResourceTypeFolderAnalyser {
                 }
             }
             String[] parts = scriptFile.toString().split("\\.");
-            if (parts.length >= 2 && parts.length <= 4) {
-                String method = null;
-                String requestExtension = null;
-                String scriptExtension = parts[parts.length - 1];
-                String first = parts[0];
-                if (!first.equals(resourceTypeLabel)) {
-                    if (MetadataMojo.METHODS.contains(first)) {
-                        // method script
-                        method = first;
-                        if ("HEAD".equals(method) || "GET".equals(method)) {
-                            if (parts.length == 4) {
-                                selectors.add(parts[1]);
-                                requestExtension = parts[2];
-                            } else if (parts.length == 3) {
-                                String middlePart = parts[1];
-                                if (MimeTypeChecker.hasMimeType(middlePart)) {
-                                    requestExtension = middlePart;
-                                } else {
-                                    selectors.add(middlePart);
-                                }
-                            }
-                        } else {
-                            if (parts.length != 2) {
-                                log.warn(String.format("Script %s doesn't respect naming conventions. Only GET and HEAD scripts are " +
-                                        "allowed to use additional selectors or request extensions.", script.toString()));
-                                return;
-                            }
-                        }
-                    } else {
-                        // selector script
-                        if (parts.length == 3) {
-                            selectors.add(first);
-                            requestExtension = parts[1];
-                        } else if (parts.length == 2) {
-                            selectors.add(first);
-                        } else {
-                            log.warn(String.format("Script %s doesn't respect naming conventions. A selector script can contain at max " +
-                                    "the request extension, but no other selectors."));
-                            return;
-                        }
-                    }
-                } else {
-                    // main script
-                    if (parts.length > 3) {
-                        log.warn(String.format("Script %s doesn't respect naming conventions. The main script can contain at max " +
-                                "the request extension, but no other selectors."));
-                        return;
-                    }
-                    if (parts.length == 3) {
-                        requestExtension = parts[parts.length - 2];
-                    }
-                }
-                String scriptEngine = scriptEngineMappings.get(scriptExtension);
-                if (StringUtils.isNotEmpty(scriptEngine)) {
-                    providedCapabilities.add(ProvidedCapability.builder().withResourceType(resourceType).withScriptEngine(scriptEngine)
-                            .withVersion(version).withSelectors(selectors).withRequestExtension(requestExtension).withRequestMethod(method)
-                            .build());
-                } else {
-                    log.warn(String.format("Unknown script engine mapping for script %s. Skipping.", scriptFile.toString()));
-                }
-            } else {
+            if (parts.length < 2 || parts.length > 4) {
                 log.warn(String.format("Skipping script %s since it either does not target a script engine or it provides too many " +
                         "selector parts in its name.", script.toString()));
+                return;
+            }
+            String name = parts[0];
+            String scriptEngineExtension = parts[parts.length - 1];
+            String scriptEngine = scriptEngineMappings.get(scriptEngineExtension);
+            if (StringUtils.isNotEmpty(scriptEngine)) {
+                String requestExtension = null;
+                String requestMethod = null;
+                if (parts.length == 2 && !resourceTypeLabel.equals(name)) {
+                    if (MetadataMojo.METHODS.contains(name)) {
+                        requestMethod = name;
+                    } else if (MimeTypeChecker.hasMimeType(name)) {
+                        requestExtension = name;
+                    } else {
+                        selectors.add(name);
+                    }
+                }
+                if (parts.length == 3) {
+                    String middle = parts[1];
+                    if (MetadataMojo.METHODS.contains(middle)) {
+                        requestMethod = middle;
+                    } else if (MimeTypeChecker.hasMimeType(middle)) {
+                        requestExtension = middle;
+                    }
+                    if (!resourceTypeLabel.equals(name)) {
+                        selectors.add(name);
+                    }
+                }
+                if (parts.length == 4){
+                    requestExtension = parts[1];
+                    requestMethod = parts[2];
+                    if (!resourceTypeLabel.equals(name)) {
+                        selectors.add(name);
+                    }
+                }
+                providedCapabilities.add(
+                        ProvidedCapability.builder()
+                                .withResourceType(resourceType)
+                                .withVersion(version)
+                                .withSelectors(selectors)
+                                .withRequestExtension(requestExtension)
+                                .withRequestMethod(requestMethod)
+                                .withScriptEngine(scriptEngine)
+                                .build()
+                );
+            } else {
+                log.warn(String.format("Cannot find a script engine mapping for script %s.", script.toString()));
             }
         } else {
             log.warn(String.format("Skipping path %s since it has 0 elements.", script.toString()));

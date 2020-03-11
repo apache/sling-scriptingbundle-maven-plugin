@@ -34,7 +34,7 @@ import org.junit.Test;
 import org.osgi.framework.VersionRange;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class MetadataMojoTest {
 
@@ -91,7 +91,7 @@ public class MetadataMojoTest {
                         , "depth2", "100")).build(),
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withRequestMethod("GET").build(),
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withRequestMethod("GET").withSelectors(Arrays.asList("test")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withRequestMethod("GET").withRequestExtension("txt").build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withRequestMethod("GET").withSelectors(Arrays.asList("test")).withRequestExtension("txt").build(),
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withSelectors(Arrays.asList("test")).withRequestExtension("txt").build(),
 
                 // sling
@@ -99,9 +99,15 @@ public class MetadataMojoTest {
         ));
         Set<ProvidedCapability> provided = new HashSet<>(capabilities.getProvidedCapabilities());
         assertEquals(pExpected.size(), provided.size());
+        StringBuilder missingProvided = new StringBuilder();
         for (ProvidedCapability capability : pExpected) {
             boolean removed = provided.remove(capability);
-            assertTrue(String.format("Did not find expected provided capability %s.", capability), removed);
+            if (!removed) {
+                missingProvided.append("Missing capability: ").append(capability.toString()).append(System.lineSeparator());
+            }
+        }
+        if (missingProvided.length() > 0) {
+            fail(missingProvided.toString());
         }
 
         Set<RequiredCapability> rExpected = new HashSet<>(Arrays.asList(
@@ -111,9 +117,15 @@ public class MetadataMojoTest {
         ));
         Set<RequiredCapability> required = new HashSet<>(capabilities.getRequiredCapabilities());
         assertEquals(rExpected.size(), required.size());
+        StringBuilder missingRequired = new StringBuilder();
         for (RequiredCapability capability : rExpected) {
             boolean removed = required.remove(capability);
-            assertTrue(String.format("Did not find expected required capability %s.", capability), removed);
+            if (!removed) {
+                missingRequired.append("Missing required capability: ").append(capability.toString()).append(System.lineSeparator());
+            }
+        }
+        if (missingRequired.length() > 0) {
+            fail(missingRequired.toString());
         }
     }
 
