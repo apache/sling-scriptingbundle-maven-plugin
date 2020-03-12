@@ -29,7 +29,7 @@ class Script {
     private final String scriptExtension;
 
     private Script(@Nullable String name, @Nullable String requestExtension, @Nullable String requestMethod,
-                   @Nullable String scriptExtension) {
+                   @NotNull String scriptExtension) {
         this.name = name;
         this.requestExtension = requestExtension;
         this.requestMethod = requestMethod;
@@ -51,7 +51,7 @@ class Script {
         return requestMethod;
     }
 
-    @Nullable
+    @NotNull
     String getScriptExtension() {
         return scriptExtension;
     }
@@ -72,7 +72,6 @@ class Script {
                 name = null;
             } else if (MimeTypeChecker.hasMimeType(name)) {
                 requestExtension = name;
-                name = null;
             }
         }
         if (parts.length == 3) {

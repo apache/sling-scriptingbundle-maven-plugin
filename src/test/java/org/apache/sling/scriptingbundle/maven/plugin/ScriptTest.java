@@ -50,7 +50,7 @@ public class ScriptTest {
     public void parseTwoPartScriptRequestExtension() {
         Script script = Script.parseScript("html.html");
         assertNotNull(script);
-        assertNull(script.getName());
+        assertEquals("html", script.getName());
         assertEquals("html", script.getRequestExtension());
         assertNull(script.getRequestMethod());
         assertEquals("html", script.getScriptExtension());

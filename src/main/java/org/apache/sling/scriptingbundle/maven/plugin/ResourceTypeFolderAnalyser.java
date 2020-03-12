@@ -188,13 +188,47 @@ class ResourceTypeFolderAnalyser {
                     selectors.add(relativeResourceTypeFolder.getName(i).toString());
                 }
             }
-            String scriptName = scriptFile.toString();
-            Script script = Script.parseScript(scriptName);
+            String scriptFileName = scriptFile.toString();
+            Script script = Script.parseScript(scriptFileName);
             if (script != null) {
                 String scriptEngine = scriptEngineMappings.get(script.getScriptExtension());
                 if (scriptEngine != null) {
-                    if (script.getName() != null && !resourceTypeLabel.equals(script.getName())) {
-                        selectors.add(script.getName());
+                    String scriptName = script.getName();
+                    if (!resourceTypeLabel.equals(scriptName)) {
+                        if (scriptFileName.split("\\.").length == 2 && scriptName != null &&
+                                scriptName.equals(script.getRequestExtension())) {
+                            /*
+                            it's unclear if the script name represents a selector or an extension, but it cannot be both;
+                            so we have:
+                                1. capability for the name as a selector
+                                2. capability for the name as a request extension
+                             */
+                            ArrayList<String> capSelectors = new ArrayList<>(selectors);
+                            capSelectors.add(scriptName);
+                            providedCapabilities.add(
+                                    ProvidedCapability.builder()
+                                            .withResourceType(resourceType)
+                                            .withVersion(version)
+                                            .withSelectors(capSelectors)
+                                            .withRequestMethod(script.getRequestMethod())
+                                            .withScriptEngine(scriptEngine)
+                                            .build()
+                            );
+                            providedCapabilities.add(
+                                    ProvidedCapability.builder()
+                                            .withResourceType(resourceType)
+                                            .withVersion(version)
+                                            .withSelectors(selectors)
+                                            .withRequestExtension(script.getRequestExtension())
+                                            .withRequestMethod(script.getRequestMethod())
+                                            .withScriptEngine(scriptEngine)
+                                            .build()
+                            );
+                        } else {
+                            if (scriptName != null && !MetadataMojo.METHODS.contains(scriptName)) {
+                                selectors.add(script.getName());
+                            }
+                        }
                     }
                     providedCapabilities.add(
                             ProvidedCapability.builder()
