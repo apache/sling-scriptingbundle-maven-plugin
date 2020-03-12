@@ -67,9 +67,22 @@ public class ResourceTypeFolderPredicate implements Predicate<Path> {
                     Path fileName = path.getFileName();
                     if (fileName != null) {
                         String childName = fileName.toString();
-                        String scriptName = childName.indexOf('.') != -1 ? childName.substring(0, childName.indexOf('.')) : null;
-                        if (resourceTypeLabel.equals(scriptName) || MetadataMojo.EXTENDS_FILE.equals(childName) ||
-                                MetadataMojo.METHODS.contains(scriptName)) {
+                        Script script = Script.parseScript(childName);
+                        if (
+                            MetadataMojo.EXTENDS_FILE.equals(childName) ||
+                            (
+                                script != null &&
+                                (
+                                    resourceTypeLabel.equals(script.getName()) ||
+                                    (
+                                        script.getName() == null &&
+                                        (
+                                            "html".equals(script.getRequestExtension()) || "GET".equals(script.getRequestMethod())
+                                        )
+                                    )
+                                )
+                            )
+                        ) {
                             return true;
                         }
                     }

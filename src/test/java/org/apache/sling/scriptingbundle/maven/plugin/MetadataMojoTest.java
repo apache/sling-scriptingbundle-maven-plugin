@@ -71,6 +71,11 @@ public class MetadataMojoTest {
                 ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withScriptEngine("htl").withSelectors(Arrays.asList("depth1"
                         , "depth2", "100")).build(),
 
+                // org/apache/sling/foo/depth1/depth2/depth3
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo/depth1/depth2/depth3").withExtendsResourceType("org" +
+                        "/apache/sling/bar").build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo/depth1/depth2/depth3").withScriptEngine("htl").withSelectors(Arrays.asList("depth3-selector")).build(),
+
                 // org.apache.sling.foobar/1.0.0
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withVersion("1.0.0").build(),
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withExtendsResourceType("org/apache/sling/bar").build(),
@@ -98,7 +103,6 @@ public class MetadataMojoTest {
                 ProvidedCapability.builder().withResourceType("sling").withScriptEngine("htl").build()
         ));
         Set<ProvidedCapability> provided = new HashSet<>(capabilities.getProvidedCapabilities());
-        assertEquals(pExpected.size(), provided.size());
         StringBuilder missingProvided = new StringBuilder();
         for (ProvidedCapability capability : pExpected) {
             boolean removed = provided.remove(capability);
@@ -108,6 +112,13 @@ public class MetadataMojoTest {
         }
         if (missingProvided.length() > 0) {
             fail(missingProvided.toString());
+        }
+        StringBuilder extraProvided = new StringBuilder();
+        for (ProvidedCapability capability : provided) {
+            extraProvided.append("Extra provided capability: ").append(capability.toString()).append(System.lineSeparator());
+        }
+        if (extraProvided.length() > 0) {
+            fail(extraProvided.toString());
         }
 
         Set<RequiredCapability> rExpected = new HashSet<>(Arrays.asList(

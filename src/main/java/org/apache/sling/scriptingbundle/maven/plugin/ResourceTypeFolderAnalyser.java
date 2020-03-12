@@ -24,7 +24,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -74,33 +73,42 @@ class ResourceTypeFolderAnalyser {
         }
         if (resourceType != null) {
             String resourceTypeLabel = getResourceTypeLabel(resourceType);
-            try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(scriptsDirectory.resolve(resourceTypeDirectory))) {
-                for (Path directoryEntry : directoryStream) {
-                    if (Files.isRegularFile(directoryEntry)) {
-                        Path file = directoryEntry.getFileName();
+            String finalResourceType = resourceType;
+            String finalVersion = version;
+            try (DirectoryStream<Path> resourceTypeDirectoryStream = Files.newDirectoryStream(scriptsDirectory.resolve(resourceTypeDirectory))) {
+                resourceTypeDirectoryStream.forEach(entry -> {
+                    if (Files.isRegularFile(entry)) {
+                        Path file = entry.getFileName();
                         if (file != null) {
                             if (MetadataMojo.EXTENDS_FILE.equals(file.toString())) {
-                                processExtendsFile(resourceType, version, directoryEntry, providedCapabilities, requiredCapabilities);
+                                processExtendsFile(finalResourceType, finalVersion, entry, providedCapabilities, requiredCapabilities);
                             } else if (MetadataMojo.REQUIRES_FILE.equals(file.toString())) {
-                                processRequiresFile(directoryEntry, requiredCapabilities);
+                                processRequiresFile(entry, requiredCapabilities);
                             } else {
-                                processScriptFile(resourceTypeDirectory, scriptEngineMappings, directoryEntry, resourceType, version,
+                                processScriptFile(resourceTypeDirectory, scriptEngineMappings, entry, finalResourceType, finalVersion,
                                         resourceTypeLabel, providedCapabilities);
                             }
                         }
-                    } else if (Files.isDirectory(directoryEntry) && !resourceTypeFolderPredicate.test(directoryEntry)) {
-                        try (Stream<Path> subtree = Files.walk(directoryEntry)) {
-                            Iterator<Path> subtreeIterator = subtree.iterator();
-                            while (subtreeIterator.hasNext()) {
-                                Path subtreeEntry = subtreeIterator.next();
-                                if (Files.isRegularFile(subtreeEntry)) {
-                                    processScriptFile(resourceTypeDirectory, scriptEngineMappings, subtreeEntry, resourceType, version,
-                                            resourceTypeLabel, providedCapabilities);
+                    } else if (Files.isDirectory(entry) && !resourceTypeFolderPredicate.test(entry)) {
+                        try (Stream<Path> selectorFilesStream = Files.walk(entry).filter(Files::isRegularFile).filter(file -> {
+                            Path fileParent = file.getParent();
+                            while (!resourceTypeDirectory.equals(fileParent)) {
+                                if (resourceTypeFolderPredicate.test(fileParent)) {
+                                    return false;
                                 }
+                                fileParent = fileParent.getParent();
                             }
+                            return true;
+                        })) {
+                            selectorFilesStream.forEach(
+                                    file -> processScriptFile(resourceTypeDirectory, scriptEngineMappings, file, finalResourceType,
+                                            finalVersion, resourceTypeLabel, providedCapabilities)
+                            );
+                        } catch (IOException e) {
+                            log.error(String.format("Unable to scan folder %s.", entry.toString()), e);
                         }
                     }
-                }
+                });
             } catch (IOException | IllegalArgumentException e) {
                 log.warn(String.format("Cannot analyse folder %s.", scriptsDirectory.resolve(resourceTypeDirectory).toString()), e);
             }
@@ -111,69 +119,68 @@ class ResourceTypeFolderAnalyser {
 
     private void processExtendsFile(@NotNull String resourceType, @Nullable String version, @NotNull Path extendsFile,
                                     @NotNull Set<ProvidedCapability> providedCapabilities,
-                                    @NotNull Set<RequiredCapability> requiredCapabilities)
-            throws IOException {
-        List<String> extendResources = Files.readAllLines(extendsFile, StandardCharsets.UTF_8);
-        if (extendResources.size() == 1) {
-            String extend = extendResources.get(0);
-            if (StringUtils.isNotEmpty(extend)) {
-                String[] extendParts = extend.split(";");
-                String extendedResourceType = extendParts[0];
-                String extendedResourceTypeVersion = extendParts.length > 1 ? extendParts[1] : null;
-                providedCapabilities.add(
-                        ProvidedCapability.builder()
-                                .withResourceType(resourceType)
-                                .withVersion(version)
-                                .withExtendsResourceType(extendedResourceType)
-                                .build());
-                RequiredCapability.Builder requiredBuilder =
-                        RequiredCapability.builder().withResourceType(extendedResourceType);
-                try {
-                    if (extendedResourceTypeVersion != null) {
-                        requiredBuilder.withVersionRange(
-                                VersionRange.valueOf(extendedResourceTypeVersion.substring(extendedResourceTypeVersion.indexOf('=') + 1)));
-                    }
-                } catch (IllegalArgumentException ignored) {
-                    log.warn(String.format("Invalid version range '%s' defined for extended resourceType '%s'" +
-                                    " in file %s.", extendedResourceTypeVersion, extendedResourceType,
-                            extendsFile.toString()));
+                                    @NotNull Set<RequiredCapability> requiredCapabilities) {
+        try {
+            List<String> extendResources = Files.readAllLines(extendsFile, StandardCharsets.UTF_8);
+            if (extendResources.size() == 1) {
+                String extend = extendResources.get(0);
+                if (StringUtils.isNotEmpty(extend)) {
+                    String[] extendParts = extend.split(";");
+                    String extendedResourceType = extendParts[0];
+                    String extendedResourceTypeVersion = extendParts.length > 1 ? extendParts[1] : null;
+                    providedCapabilities.add(
+                            ProvidedCapability.builder()
+                                    .withResourceType(resourceType)
+                                    .withVersion(version)
+                                    .withExtendsResourceType(extendedResourceType)
+                                    .build());
+                    RequiredCapability.Builder requiredBuilder =
+                            RequiredCapability.builder().withResourceType(extendedResourceType);
+                    extractVersionRange(extendsFile, requiredBuilder, extendedResourceTypeVersion);
+                    requiredCapabilities.add(requiredBuilder.build());
                 }
-                requiredCapabilities.add(requiredBuilder.build());
             }
+        } catch (IOException e) {
+            log.error(String.format("Unable to read file %s.", extendsFile.toString()), e);
         }
     }
 
     private void processRequiresFile(@NotNull Path requiresFile,
-                                     @NotNull Set<RequiredCapability> requiredCapabilities)
-            throws IOException {
-        List<String> requiredResourceTypes = Files.readAllLines(requiresFile, StandardCharsets.UTF_8);
-        for (String requiredResourceType : requiredResourceTypes) {
-            if (StringUtils.isNotEmpty(requiredResourceType)) {
-                String[] requireParts = requiredResourceType.split(";");
-                String resourceType = requireParts[0];
-                String version = requireParts.length > 1 ? requireParts[1] : null;
-                RequiredCapability.Builder requiredBuilder =
-                        RequiredCapability.builder().withResourceType(resourceType);
-                try {
-                    if (version != null) {
-                        requiredBuilder.withVersionRange(VersionRange.valueOf(version.substring(version.indexOf('=') + 1)));
-                    }
-                } catch (IllegalArgumentException ignored) {
-                    log.warn(String.format("Invalid version range '%s' defined for required resourceType '%s'" +
-                                    " in file %s.", version, resourceType,
-                            requiresFile.toString()));
+                                     @NotNull Set<RequiredCapability> requiredCapabilities) {
+        try {
+            List<String> requiredResourceTypes = Files.readAllLines(requiresFile, StandardCharsets.UTF_8);
+            for (String requiredResourceType : requiredResourceTypes) {
+                if (StringUtils.isNotEmpty(requiredResourceType)) {
+                    String[] requireParts = requiredResourceType.split(";");
+                    String resourceType = requireParts[0];
+                    String version = requireParts.length > 1 ? requireParts[1] : null;
+                    RequiredCapability.Builder requiredBuilder =
+                            RequiredCapability.builder().withResourceType(resourceType);
+                    extractVersionRange(requiresFile, requiredBuilder, version);
+                    requiredCapabilities.add(requiredBuilder.build());
                 }
-                requiredCapabilities.add(requiredBuilder.build());
             }
+        } catch (IOException e) {
+            log.error(String.format("Unable to read file %s.", requiresFile.toString()), e);
+        }
+    }
+
+    private void extractVersionRange(@NotNull Path requiresFile, @NotNull RequiredCapability.Builder requiredBuilder, String version) {
+        try {
+            if (version != null) {
+                requiredBuilder.withVersionRange(VersionRange.valueOf(version.substring(version.indexOf('=') + 1)));
+            }
+        } catch (IllegalArgumentException ignored) {
+            log.warn(String.format("Invalid version range format %s in file %s.", version, requiresFile.toString()));
         }
     }
 
     private void processScriptFile(@NotNull Path resourceTypeDirectory, @NotNull Map<String, String> scriptEngineMappings,
-                                   @NotNull Path script, @NotNull String resourceType, @Nullable String version,
+                                   @NotNull Path scriptPath, @NotNull String resourceType, @Nullable String version,
                                    @NotNull String resourceTypeLabel, @NotNull Set<ProvidedCapability> providedCapabilities) {
-        Path scriptFile = script.getFileName();
+        Path scriptFile = scriptPath.getFileName();
         if (scriptFile != null) {
-            Path relativeResourceTypeFolder = resourceTypeDirectory.relativize(script);
+            Path relativeResourceTypeFolder = resourceTypeDirectory.relativize(scriptPath);
             int pathSegments = relativeResourceTypeFolder.getNameCount();
             ArrayList<String> selectors = new ArrayList<>();
             if (pathSegments > 1) {
@@ -181,62 +188,33 @@ class ResourceTypeFolderAnalyser {
                     selectors.add(relativeResourceTypeFolder.getName(i).toString());
                 }
             }
-            String[] parts = scriptFile.toString().split("\\.");
-            if (parts.length < 2 || parts.length > 4) {
-                log.warn(String.format("Skipping script %s since it either does not target a script engine or it provides too many " +
-                        "selector parts in its name.", script.toString()));
-                return;
-            }
-            String name = parts[0];
-            String scriptEngineExtension = parts[parts.length - 1];
-            String scriptEngine = scriptEngineMappings.get(scriptEngineExtension);
-            if (StringUtils.isNotEmpty(scriptEngine)) {
-                String requestExtension = null;
-                String requestMethod = null;
-                if (parts.length == 2 && !resourceTypeLabel.equals(name)) {
-                    if (MetadataMojo.METHODS.contains(name)) {
-                        requestMethod = name;
-                    } else if (MimeTypeChecker.hasMimeType(name)) {
-                        requestExtension = name;
-                    } else {
-                        selectors.add(name);
+            String scriptName = scriptFile.toString();
+            Script script = Script.parseScript(scriptName);
+            if (script != null) {
+                String scriptEngine = scriptEngineMappings.get(script.getScriptExtension());
+                if (scriptEngine != null) {
+                    if (script.getName() != null && !resourceTypeLabel.equals(script.getName())) {
+                        selectors.add(script.getName());
                     }
+                    providedCapabilities.add(
+                            ProvidedCapability.builder()
+                                    .withResourceType(resourceType)
+                                    .withVersion(version)
+                                    .withSelectors(selectors)
+                                    .withRequestExtension(script.getRequestExtension())
+                                    .withRequestMethod(script.getRequestMethod())
+                                    .withScriptEngine(scriptEngine)
+                                    .build()
+                    );
+                } else {
+                    log.warn(String.format("Cannot find a script engine mapping for script %s.", scriptPath.toString()));
                 }
-                if (parts.length == 3) {
-                    String middle = parts[1];
-                    if (MetadataMojo.METHODS.contains(middle)) {
-                        requestMethod = middle;
-                    } else if (MimeTypeChecker.hasMimeType(middle)) {
-                        requestExtension = middle;
-                    }
-                    if (!resourceTypeLabel.equals(name)) {
-                        selectors.add(name);
-                    }
-                }
-                if (parts.length == 4){
-                    requestExtension = parts[1];
-                    requestMethod = parts[2];
-                    if (!resourceTypeLabel.equals(name)) {
-                        selectors.add(name);
-                    }
-                }
-                providedCapabilities.add(
-                        ProvidedCapability.builder()
-                                .withResourceType(resourceType)
-                                .withVersion(version)
-                                .withSelectors(selectors)
-                                .withRequestExtension(requestExtension)
-                                .withRequestMethod(requestMethod)
-                                .withScriptEngine(scriptEngine)
-                                .build()
-                );
             } else {
-                log.warn(String.format("Cannot find a script engine mapping for script %s.", script.toString()));
+                log.warn(String.format("File %s does not denote a script.", scriptPath.toString()));
             }
         } else {
-            log.warn(String.format("Skipping path %s since it has 0 elements.", script.toString()));
+            log.warn(String.format("Skipping path %s since it has 0 elements.", scriptPath.toString()));
         }
-
     }
 
     private String getResourceType(@NotNull Path resourceTypeFolder) {
