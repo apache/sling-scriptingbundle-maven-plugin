@@ -24,6 +24,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,9 +33,9 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.sling.scripting.bundle.tracker.ResourceType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.osgi.framework.Version;
 import org.osgi.framework.VersionRange;
 
 
@@ -43,75 +44,57 @@ class ResourceTypeFolderAnalyser {
     private final Log log;
     private final Path scriptsDirectory;
     private final ResourceTypeFolderPredicate resourceTypeFolderPredicate;
+    private final Map<String, String> scriptEngineMappings;
+    private final Set<String> searchPaths;
 
-    ResourceTypeFolderAnalyser(@NotNull Log log, @NotNull Path scriptsDirectory) {
+    ResourceTypeFolderAnalyser(@NotNull Log log, @NotNull Path scriptsDirectory, @NotNull Map<String, String> scriptEngineMappings,
+                               @NotNull Set<String> searchPaths) {
         this.log = log;
         this.scriptsDirectory = scriptsDirectory;
         this.resourceTypeFolderPredicate = new ResourceTypeFolderPredicate(log);
+        this.scriptEngineMappings = scriptEngineMappings;
+        this.searchPaths = searchPaths;
     }
 
-    Capabilities getCapabilities(@NotNull Path resourceTypeDirectory, @NotNull Map<String, String> scriptEngineMappings) {
+    Capabilities getCapabilities(@NotNull Path resourceTypeDirectory) {
         Set<ProvidedCapability> providedCapabilities = new LinkedHashSet<>();
         Set<RequiredCapability> requiredCapabilities = new LinkedHashSet<>();
-        String version = null;
-        String resourceType = null;
-        try {
-            Path fileName = resourceTypeDirectory.getFileName();
-            if (fileName != null) {
-                version = Version.parseVersion(fileName.toString()).toString();
-            }
-        } catch (IllegalArgumentException ignored) {
-            log.debug("No resourceType version detected in " + scriptsDirectory.resolve(resourceTypeDirectory).toString());
-        }
-        if (StringUtils.isNotEmpty(version)) {
-            Path parent = resourceTypeDirectory.getParent();
-            if (parent != null) {
-                resourceType = getResourceType(parent);
-            }
-        } else {
-            resourceType = getResourceType(resourceTypeDirectory);
-        }
-        if (resourceType != null) {
-            String resourceTypeLabel = getResourceTypeLabel(resourceType);
-            String finalResourceType = resourceType;
-            String finalVersion = version;
-            try (DirectoryStream<Path> resourceTypeDirectoryStream = Files.newDirectoryStream(scriptsDirectory.resolve(resourceTypeDirectory))) {
-                resourceTypeDirectoryStream.forEach(entry -> {
-                    if (Files.isRegularFile(entry)) {
-                        Path file = entry.getFileName();
-                        if (file != null) {
-                            if (MetadataMojo.EXTENDS_FILE.equals(file.toString())) {
-                                processExtendsFile(finalResourceType, finalVersion, entry, providedCapabilities, requiredCapabilities);
-                            } else if (MetadataMojo.REQUIRES_FILE.equals(file.toString())) {
-                                processRequiresFile(entry, requiredCapabilities);
-                            } else {
-                                processScriptFile(resourceTypeDirectory, scriptEngineMappings, entry, finalResourceType, finalVersion,
-                                        resourceTypeLabel, providedCapabilities);
-                            }
-                        }
-                    } else if (Files.isDirectory(entry) && !resourceTypeFolderPredicate.test(entry)) {
-                        try (Stream<Path> selectorFilesStream = Files.walk(entry).filter(Files::isRegularFile).filter(file -> {
-                            Path fileParent = file.getParent();
-                            while (!resourceTypeDirectory.equals(fileParent)) {
-                                if (resourceTypeFolderPredicate.test(fileParent)) {
-                                    return false;
-                                }
-                                fileParent = fileParent.getParent();
-                            }
-                            return true;
-                        })) {
-                            selectorFilesStream.forEach(
-                                    file -> processScriptFile(resourceTypeDirectory, scriptEngineMappings, file, finalResourceType,
-                                            finalVersion, resourceTypeLabel, providedCapabilities)
-                            );
-                        } catch (IOException e) {
-                            log.error(String.format("Unable to scan folder %s.", entry.toString()), e);
+        try (DirectoryStream<Path> resourceTypeDirectoryStream = Files.newDirectoryStream(scriptsDirectory.resolve(resourceTypeDirectory))) {
+            Path relativeResourceTypeDirectory = scriptsDirectory.relativize(resourceTypeDirectory);
+            final ResourceType resourceType = ResourceType.parseResourceType(relativeResourceTypeDirectory.toString());
+            resourceTypeDirectoryStream.forEach(entry -> {
+                if (Files.isRegularFile(entry)) {
+                    Path file = entry.getFileName();
+                    if (file != null) {
+                        if (MetadataMojo.EXTENDS_FILE.equals(file.toString())) {
+                            processExtendsFile(resourceType.getType(), resourceType.getVersion(), entry, providedCapabilities, requiredCapabilities);
+                        } else if (MetadataMojo.REQUIRES_FILE.equals(file.toString())) {
+                            processRequiresFile(entry, requiredCapabilities);
+                        } else {
+                            processScriptFile(resourceTypeDirectory, entry, resourceType, providedCapabilities);
                         }
                     }
-                });
-            } catch (IOException | IllegalArgumentException e) {
-                log.warn(String.format("Cannot analyse folder %s.", scriptsDirectory.resolve(resourceTypeDirectory).toString()), e);
-            }
+                } else if (Files.isDirectory(entry) && !resourceTypeFolderPredicate.test(entry)) {
+                    try (Stream<Path> selectorFilesStream = Files.walk(entry).filter(Files::isRegularFile).filter(file -> {
+                        Path fileParent = file.getParent();
+                        while (!resourceTypeDirectory.equals(fileParent)) {
+                            if (resourceTypeFolderPredicate.test(fileParent)) {
+                                return false;
+                            }
+                            fileParent = fileParent.getParent();
+                        }
+                        return true;
+                    })) {
+                        selectorFilesStream.forEach(
+                                file -> processScriptFile(resourceTypeDirectory, file, resourceType, providedCapabilities)
+                        );
+                    } catch (IOException e) {
+                        log.error(String.format("Unable to scan folder %s.", entry.toString()), e);
+                    }
+                }
+            });
+        } catch (IOException | IllegalArgumentException e) {
+            log.warn(String.format("Cannot analyse folder %s.", scriptsDirectory.resolve(resourceTypeDirectory).toString()), e);
         }
 
         return new Capabilities(providedCapabilities, requiredCapabilities);
@@ -175,14 +158,13 @@ class ResourceTypeFolderAnalyser {
         }
     }
 
-    private void processScriptFile(@NotNull Path resourceTypeDirectory, @NotNull Map<String, String> scriptEngineMappings,
-                                   @NotNull Path scriptPath, @NotNull String resourceType, @Nullable String version,
-                                   @NotNull String resourceTypeLabel, @NotNull Set<ProvidedCapability> providedCapabilities) {
+    private void processScriptFile(@NotNull Path resourceTypeDirectory, @NotNull Path scriptPath,
+                                   @NotNull ResourceType resourceType, @NotNull Set<ProvidedCapability> providedCapabilities) {
         Path scriptFile = scriptPath.getFileName();
         if (scriptFile != null) {
             Path relativeResourceTypeFolder = resourceTypeDirectory.relativize(scriptPath);
             int pathSegments = relativeResourceTypeFolder.getNameCount();
-            ArrayList<String> selectors = new ArrayList<>();
+            LinkedHashSet<String> selectors = new LinkedHashSet<>();
             if (pathSegments > 1) {
                 for (int i = 0; i < pathSegments - 1; i++) {
                     selectors.add(relativeResourceTypeFolder.getName(i).toString());
@@ -194,7 +176,21 @@ class ResourceTypeFolderAnalyser {
                 String scriptEngine = scriptEngineMappings.get(script.getScriptExtension());
                 if (scriptEngine != null) {
                     String scriptName = script.getName();
-                    if (!resourceTypeLabel.equals(scriptName)) {
+                    Set<String> resourceTypes = new HashSet<>();
+                    for (String searchPath : searchPaths) {
+                        if (!searchPath.endsWith("/")) {
+                            searchPath = searchPath + "/";
+                        }
+                        String absoluteType = "/" + resourceType.getType();
+                        if (absoluteType.startsWith(searchPath)) {
+                            resourceTypes.add(absoluteType);
+                            resourceTypes.add(absoluteType.substring(searchPath.length()));
+                        }
+                    }
+                    if (resourceTypes.isEmpty()) {
+                        resourceTypes.add(resourceType.getType());
+                    }
+                    if (!resourceType.getResourceLabel().equals(scriptName)) {
                         if (scriptFileName.split("\\.").length == 2 && scriptName != null &&
                                 scriptName.equals(script.getRequestExtension())) {
                             /*
@@ -203,12 +199,12 @@ class ResourceTypeFolderAnalyser {
                                 1. capability for the name as a selector
                                 2. capability for the name as a request extension
                              */
-                            ArrayList<String> capSelectors = new ArrayList<>(selectors);
+                            LinkedHashSet<String> capSelectors = new LinkedHashSet<>(selectors);
                             capSelectors.add(scriptName);
                             providedCapabilities.add(
                                     ProvidedCapability.builder()
-                                            .withResourceType(resourceType)
-                                            .withVersion(version)
+                                            .withResourceTypes(resourceTypes)
+                                            .withVersion(resourceType.getVersion())
                                             .withSelectors(capSelectors)
                                             .withRequestMethod(script.getRequestMethod())
                                             .withScriptEngine(scriptEngine)
@@ -216,8 +212,8 @@ class ResourceTypeFolderAnalyser {
                             );
                             providedCapabilities.add(
                                     ProvidedCapability.builder()
-                                            .withResourceType(resourceType)
-                                            .withVersion(version)
+                                            .withResourceTypes(resourceTypes)
+                                            .withVersion(resourceType.getVersion())
                                             .withSelectors(selectors)
                                             .withRequestExtension(script.getRequestExtension())
                                             .withRequestMethod(script.getRequestMethod())
@@ -232,8 +228,8 @@ class ResourceTypeFolderAnalyser {
                     }
                     providedCapabilities.add(
                             ProvidedCapability.builder()
-                                    .withResourceType(resourceType)
-                                    .withVersion(version)
+                                    .withResourceTypes(resourceTypes)
+                                    .withVersion(resourceType.getVersion())
                                     .withSelectors(selectors)
                                     .withRequestExtension(script.getRequestExtension())
                                     .withRequestMethod(script.getRequestMethod())
@@ -249,41 +245,5 @@ class ResourceTypeFolderAnalyser {
         } else {
             log.warn(String.format("Skipping path %s since it has 0 elements.", scriptPath.toString()));
         }
-    }
-
-    private String getResourceType(@NotNull Path resourceTypeFolder) {
-        StringBuilder stringBuilder = new StringBuilder();
-        Path relativeResourceTypePath = scriptsDirectory.relativize(resourceTypeFolder);
-        if (StringUtils.isNotEmpty(relativeResourceTypePath.toString())) {
-            int parts = relativeResourceTypePath.getNameCount();
-            for (int i = 0; i < parts; i++) {
-                stringBuilder.append(relativeResourceTypePath.getName(i));
-                if (i < parts - 1) {
-                    stringBuilder.append('/');
-                }
-            }
-        }
-        return stringBuilder.toString();
-    }
-
-    private @NotNull String getResourceTypeLabel(@NotNull String resourceType) {
-        String resourceTypeLabel = null;
-        if (resourceType.contains("/")) {
-            int lastIndex = resourceType.lastIndexOf('/');
-            if (lastIndex < resourceType.length() - 2) {
-                resourceTypeLabel = resourceType.substring(++lastIndex);
-            }
-        } else if (resourceType.contains(".")) {
-            int lastIndex = resourceType.lastIndexOf('.');
-            if (lastIndex < resourceType.length() - 2) {
-                resourceTypeLabel = resourceType.substring(++lastIndex);
-            }
-        } else {
-            resourceTypeLabel = resourceType;
-        }
-        if (StringUtils.isEmpty(resourceTypeLabel)) {
-            throw new IllegalArgumentException(String.format("Resource type '%s' does not provide a resourceTypeLabel.", resourceType));
-        }
-        return resourceTypeLabel;
     }
 }

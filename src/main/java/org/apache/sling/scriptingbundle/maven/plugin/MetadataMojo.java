@@ -55,8 +55,7 @@ import org.osgi.framework.VersionRange;
       defaultPhase = LifecyclePhase.PACKAGE)
 public class MetadataMojo extends AbstractMojo {
 
-    @Parameter(defaultValue = "${project}",
-               readonly = true)
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
 
     /**
@@ -99,11 +98,36 @@ public class MetadataMojo extends AbstractMojo {
     @Parameter
     private Map<String, String> scriptEngineMappings;
 
+    /**
+     * Allows overriding the default search paths ({@code /apps} and {@code /libs}). When scripts are organised in folders which follow
+     * the search path structure, the Mojo will generate two resource types for each resource type folder. For example:
+     * <pre>
+     *     src/main/scripts/apps/org/apache/sling/example/example.html
+     * </pre>
+     * will generate the following two resource types
+     * <pre>
+     *     org/apache/sling/example
+     *     /apps/org/apache/sling/example
+     * </pre>
+     *
+     * However, the following script
+     * <pre>
+     *     src/main/scripts/org/apache/sling/example/example.html
+     * </pre>
+     * will generate only one resource type
+     * <pre>
+     *     org/apache/sling/example
+     * </pre>
+     */
+    @Parameter(property = "scriptingbundle.searchPaths")
+    private Set<String> searchPaths;
+
     static final Set<String> METHODS = new HashSet<>(Arrays.asList("TRACE", "OPTIONS", "GET", "HEAD", "POST", "PUT",
             "DELETE", "PATCH"));
     static final String EXTENDS_FILE = "extends";
     static final String REQUIRES_FILE = "requires";
     static final String CAPABILITY_NS = "sling.resourceType";
+    static final String CAPABILITY_RESOURCE_TYPE_AT = "sling.resourceType:List<String>";
     static final String CAPABILITY_SELECTORS_AT = CAPABILITY_NS + ".selectors:List<String>";
     static final String CAPABILITY_EXTENSIONS_AT = CAPABILITY_NS + ".extensions:List<String>";
     static final String CAPABILITY_METHODS_AT = "sling.servlet.methods:List<String>";
@@ -111,6 +135,7 @@ public class MetadataMojo extends AbstractMojo {
     static final String CAPABILITY_EXTENDS_AT = "extends";
     static final String CAPABILITY_SCRIPT_ENGINE_AT = "scriptEngine";
     static final Map<String, String> DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING;
+    static final Set<String> DEFAULT_SEARCH_PATHS;
 
     static {
         DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING = new HashMap<>();
@@ -127,6 +152,8 @@ public class MetadataMojo extends AbstractMojo {
          * commented out since Thymeleaf uses the same 'html' extension like HTL
          */
 //        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("html", "thymeleaf");
+
+        DEFAULT_SEARCH_PATHS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("/libs", "/apps")));
     }
 
     private Capabilities capabilities;
@@ -158,7 +185,12 @@ public class MetadataMojo extends AbstractMojo {
         if (scriptEngineMappings != null) {
             mappings.putAll(scriptEngineMappings);
         }
-        capabilities = generateCapabilities(root, resourceTypeDirectories, mappings);
+        scriptEngineMappings = mappings;
+        Set<String> searchPathsSet;
+        if (searchPaths == null || searchPaths.isEmpty()) {
+            searchPaths = DEFAULT_SEARCH_PATHS;
+        }
+        capabilities = generateCapabilities(root, resourceTypeDirectories);
         String providedCapabilitiesDefinition = getProvidedCapabilitiesString(capabilities);
         String requiredCapabilitiesDefinition = getRequiredCapabilitiesString(capabilities);
         project.getProperties().put(this.getClass().getPackage().getName() + "." + Constants.PROVIDE_CAPABILITY,
@@ -168,13 +200,13 @@ public class MetadataMojo extends AbstractMojo {
     }
 
     @NotNull
-    private Capabilities generateCapabilities(@NotNull String root, @NotNull List<Path> resourceTypeDirectories, @NotNull Map<String,
-            String> scriptEngineMappings) {
-        ResourceTypeFolderAnalyser analyser = new ResourceTypeFolderAnalyser(getLog(), Paths.get(root));
+    private Capabilities generateCapabilities(@NotNull String root, @NotNull List<Path> resourceTypeDirectories) {
+        ResourceTypeFolderAnalyser analyser = new ResourceTypeFolderAnalyser(getLog(), Paths.get(root), scriptEngineMappings,
+                searchPaths);
         Set<ProvidedCapability> providedCapabilities = new LinkedHashSet<>();
         Set<RequiredCapability> requiredCapabilities = new LinkedHashSet<>();
         for (Path resourceTypeDirectory : resourceTypeDirectories) {
-            Capabilities resourceTypeCapabilities = analyser.getCapabilities(resourceTypeDirectory, scriptEngineMappings);
+            Capabilities resourceTypeCapabilities = analyser.getCapabilities(resourceTypeDirectory);
             providedCapabilities.addAll(resourceTypeCapabilities.getProvidedCapabilities());
             requiredCapabilities.addAll(resourceTypeCapabilities.getRequiredCapabilities());
         }
@@ -188,7 +220,7 @@ public class MetadataMojo extends AbstractMojo {
         int pcIndex = 0;
         for (ProvidedCapability capability : capabilities.getProvidedCapabilities()) {
             builder.append(CAPABILITY_NS).append(";");
-            builder.append(CAPABILITY_NS).append("=").append("\"").append(capability.getResourceType()).append("\"");
+            processListAttribute(CAPABILITY_RESOURCE_TYPE_AT, builder,capability.getResourceTypes());
             Optional.ofNullable(capability.getScriptEngine()).ifPresent(scriptEngine ->
                     builder.append(";")
                             .append(CAPABILITY_SCRIPT_ENGINE_AT).append("=").append("\"").append(scriptEngine).append("\"")
@@ -210,18 +242,8 @@ public class MetadataMojo extends AbstractMojo {
                             .append(CAPABILITY_EXTENSIONS_AT).append("=").append("\"").append(requestExtension).append("\"")
             );
             if (!capability.getSelectors().isEmpty()) {
-                builder.append(";").append(CAPABILITY_SELECTORS_AT).append("=").append("\"");
-                List<String> selectors = capability.getSelectors();
-                int selectorsSize = selectors.size();
-                int selectorIndex = 0;
-                for (String selector : selectors) {
-                    builder.append(selector);
-                    if (selectorIndex < selectorsSize - 1) {
-                        builder.append(",");
-                    }
-                    selectorIndex++;
-                }
-                builder.append("\"");
+                builder.append(";");
+                processListAttribute(CAPABILITY_SELECTORS_AT, builder, capability.getSelectors());
             }
             if (pcIndex < pcNum - 1) {
                 builder.append(",");
@@ -229,6 +251,20 @@ public class MetadataMojo extends AbstractMojo {
             pcIndex++;
         }
         return builder.toString();
+    }
+
+    private void processListAttribute(@NotNull String capabilityAttribute, @NotNull StringBuilder builder, @NotNull Set<String> values) {
+        builder.append(capabilityAttribute).append("=").append("\"");
+        int valuesSize = values.size();
+        int valueIndex = 0;
+        for (String item : values) {
+            builder.append(item);
+            if (valueIndex < valuesSize - 1) {
+                builder.append(",");
+            }
+            valueIndex++;
+        }
+        builder.append("\"");
     }
 
     @NotNull

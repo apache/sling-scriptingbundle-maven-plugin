@@ -21,7 +21,9 @@ package org.apache.sling.scriptingbundle.maven.plugin;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.maven.execution.MavenSession;
@@ -51,57 +53,80 @@ public class MetadataMojoTest {
         MojoProject mojoProject = getMojoProject(getProjectLocation("project-1"));
         mojoProject.mojo.execute();
         Capabilities capabilities = mojoProject.mojo.getCapabilities();
-
         Set<ProvidedCapability> pExpected = new HashSet<>(Arrays.asList(
                 // org/apache/sling/bar/1.0.0
                 ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl").withVersion("1.0.0").build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
-                        , "100")).build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
-                        , "200")).build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
-                        , "depth2", "100")).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "100"))).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "200"))).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "depth2", "100"))).build(),
 
                 // org/apache/sling/foo
                 ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withScriptEngine("htl").build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withScriptEngine("htl").withSelectors(Arrays.asList("depth1"
-                        , "100")).build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withScriptEngine("htl").withSelectors(Arrays.asList("depth1"
-                        , "200")).build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withScriptEngine("htl").withSelectors(Arrays.asList("depth1"
-                        , "depth2", "100")).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withScriptEngine("htl").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "100"))).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withScriptEngine("htl").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "200"))).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo").withScriptEngine("htl").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "depth2", "100"))).build(),
 
                 // org/apache/sling/foo/depth1/depth2/depth3
                 ProvidedCapability.builder().withResourceType("org/apache/sling/foo/depth1/depth2/depth3").withExtendsResourceType("org" +
                         "/apache/sling/bar").build(),
-                ProvidedCapability.builder().withResourceType("org/apache/sling/foo/depth1/depth2/depth3").withScriptEngine("htl").withSelectors(Arrays.asList("depth3-selector")).build(),
+                ProvidedCapability.builder().withResourceType("org/apache/sling/foo/depth1/depth2/depth3").withScriptEngine("htl").withSelectors(new LinkedHashSet<>(Arrays.asList("depth3-selector"))).build(),
 
                 // org.apache.sling.foobar/1.0.0
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withVersion("1.0.0").build(),
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withExtendsResourceType("org/apache/sling/bar").build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
-                        , "100")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
-                        , "200")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(Arrays.asList("depth1"
-                        , "depth2", "100")).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "100"))).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "200"))).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "depth2", "100"))).build(),
 
                 // org.apache.sling.foobar
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withExtendsResourceType("org/apache/sling/bar").build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withSelectors(Arrays.asList("depth1"
-                        , "100")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withSelectors(Arrays.asList("depth1"
-                        , "200")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withSelectors(Arrays.asList("depth1"
-                        , "depth2", "100")).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "100"))).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "200"))).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                        , "depth2", "100"))).build(),
                 ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withRequestMethod("GET").build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withRequestMethod("GET").withSelectors(Arrays.asList("test")).build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withRequestMethod("GET").withSelectors(Arrays.asList("test")).withRequestExtension("txt").build(),
-                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withSelectors(Arrays.asList("test")).withRequestExtension("txt").build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withRequestMethod("GET").withSelectors(new LinkedHashSet<>(Arrays.asList("test"))).build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withRequestMethod("GET").withSelectors(new LinkedHashSet<>(Arrays.asList("test"))).withRequestExtension("txt").build(),
+                ProvidedCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withSelectors(new LinkedHashSet<>(Arrays.asList("test"))).withRequestExtension("txt").build(),
 
                 // sling
-                ProvidedCapability.builder().withResourceType("sling").withScriptEngine("htl").build()
+                ProvidedCapability.builder().withResourceType("sling").withScriptEngine("htl").build(),
+
+                // sling/test
+                ProvidedCapability.builder().withResourceType("/libs/sling/test").withResourceType("sling/test").withScriptEngine("htl").build()
         ));
+
+        Set<RequiredCapability> rExpected = new HashSet<>(Arrays.asList(
+                RequiredCapability.builder().withResourceType("sling/default").withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build(),
+                RequiredCapability.builder().withResourceType("org/apache/sling/bar").build(),
+                RequiredCapability.builder().withResourceType("org/apache/sling/bar").withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
+        ));
+        verifyCapabilities(capabilities, pExpected, rExpected);
+    }
+
+    @Test
+    public void testProject2() throws Exception {
+        MojoProject mojoProject = getMojoProject(getProjectLocation("project-2"));
+        mojoProject.mojo.execute();
+        Capabilities capabilities = mojoProject.mojo.getCapabilities();
+        Set<ProvidedCapability> pExpected = new HashSet<>(Arrays.asList(
+                ProvidedCapability.builder().withResourceType("libs/sling/test").withScriptEngine("thymeleaf").build()
+        ));
+        verifyCapabilities(capabilities, pExpected, Collections.emptySet());
+    }
+
+    private void verifyCapabilities(Capabilities capabilities, Set<ProvidedCapability> pExpected, Set<RequiredCapability> rExpected) {
         Set<ProvidedCapability> provided = new HashSet<>(capabilities.getProvidedCapabilities());
         StringBuilder missingProvided = new StringBuilder();
         for (ProvidedCapability capability : pExpected) {
@@ -121,11 +146,6 @@ public class MetadataMojoTest {
             fail(extraProvided.toString());
         }
 
-        Set<RequiredCapability> rExpected = new HashSet<>(Arrays.asList(
-                RequiredCapability.builder().withResourceType("sling/default").withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build(),
-                RequiredCapability.builder().withResourceType("org/apache/sling/bar").build(),
-                RequiredCapability.builder().withResourceType("org/apache/sling/bar").withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
-        ));
         Set<RequiredCapability> required = new HashSet<>(capabilities.getRequiredCapabilities());
         assertEquals(rExpected.size(), required.size());
         StringBuilder missingRequired = new StringBuilder();
@@ -137,6 +157,13 @@ public class MetadataMojoTest {
         }
         if (missingRequired.length() > 0) {
             fail(missingRequired.toString());
+        }
+        StringBuilder extraRequired = new StringBuilder();
+        for (RequiredCapability capability : required) {
+            extraRequired.append("Extra required capability: ").append(capability.toString()).append(System.lineSeparator());
+        }
+        if (extraRequired.length() > 0) {
+            fail(extraRequired.toString());
         }
     }
 
