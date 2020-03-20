@@ -67,7 +67,7 @@ class ResourceTypeFolderAnalyser {
                     Path file = entry.getFileName();
                     if (file != null) {
                         if (MetadataMojo.EXTENDS_FILE.equals(file.toString())) {
-                            processExtendsFile(resourceType.getType(), resourceType.getVersion(), entry, providedCapabilities, requiredCapabilities);
+                            processExtendsFile(resourceType, entry, providedCapabilities, requiredCapabilities);
                         } else if (MetadataMojo.REQUIRES_FILE.equals(file.toString())) {
                             processRequiresFile(entry, requiredCapabilities);
                         } else {
@@ -100,7 +100,7 @@ class ResourceTypeFolderAnalyser {
         return new Capabilities(providedCapabilities, requiredCapabilities);
     }
 
-    private void processExtendsFile(@NotNull String resourceType, @Nullable String version, @NotNull Path extendsFile,
+    private void processExtendsFile(@NotNull ResourceType resourceType, @NotNull Path extendsFile,
                                     @NotNull Set<ProvidedCapability> providedCapabilities,
                                     @NotNull Set<RequiredCapability> requiredCapabilities) {
         try {
@@ -113,8 +113,8 @@ class ResourceTypeFolderAnalyser {
                     String extendedResourceTypeVersion = extendParts.length > 1 ? extendParts[1] : null;
                     providedCapabilities.add(
                             ProvidedCapability.builder()
-                                    .withResourceType(resourceType)
-                                    .withVersion(version)
+                                    .withResourceTypes(processSearchPathResourceTypes(resourceType))
+                                    .withVersion(resourceType.getVersion())
                                     .withExtendsResourceType(extendedResourceType)
                                     .build());
                     RequiredCapability.Builder requiredBuilder =
@@ -126,6 +126,24 @@ class ResourceTypeFolderAnalyser {
         } catch (IOException e) {
             log.error(String.format("Unable to read file %s.", extendsFile.toString()), e);
         }
+    }
+
+    private Set<String> processSearchPathResourceTypes(@NotNull ResourceType resourceType) {
+        Set<String> resourceTypes = new HashSet<>();
+        for (String searchPath : searchPaths) {
+            if (!searchPath.endsWith("/")) {
+                searchPath = searchPath + "/";
+            }
+            String absoluteType = "/" + resourceType.getType();
+            if (absoluteType.startsWith(searchPath)) {
+                resourceTypes.add(absoluteType);
+                resourceTypes.add(absoluteType.substring(searchPath.length()));
+            }
+        }
+        if (resourceTypes.isEmpty()) {
+            resourceTypes.add(resourceType.getType());
+        }
+        return resourceTypes;
     }
 
     private void processRequiresFile(@NotNull Path requiresFile,
@@ -176,20 +194,7 @@ class ResourceTypeFolderAnalyser {
                 String scriptEngine = scriptEngineMappings.get(script.getScriptExtension());
                 if (scriptEngine != null) {
                     String scriptName = script.getName();
-                    Set<String> resourceTypes = new HashSet<>();
-                    for (String searchPath : searchPaths) {
-                        if (!searchPath.endsWith("/")) {
-                            searchPath = searchPath + "/";
-                        }
-                        String absoluteType = "/" + resourceType.getType();
-                        if (absoluteType.startsWith(searchPath)) {
-                            resourceTypes.add(absoluteType);
-                            resourceTypes.add(absoluteType.substring(searchPath.length()));
-                        }
-                    }
-                    if (resourceTypes.isEmpty()) {
-                        resourceTypes.add(resourceType.getType());
-                    }
+                    Set<String> searchPathProcessesResourceTypes = processSearchPathResourceTypes(resourceType);
                     if (!resourceType.getResourceLabel().equals(scriptName)) {
                         if (scriptFileName.split("\\.").length == 2 && scriptName != null &&
                                 scriptName.equals(script.getRequestExtension())) {
@@ -203,7 +208,7 @@ class ResourceTypeFolderAnalyser {
                             capSelectors.add(scriptName);
                             providedCapabilities.add(
                                     ProvidedCapability.builder()
-                                            .withResourceTypes(resourceTypes)
+                                            .withResourceTypes(searchPathProcessesResourceTypes)
                                             .withVersion(resourceType.getVersion())
                                             .withSelectors(capSelectors)
                                             .withRequestMethod(script.getRequestMethod())
@@ -212,7 +217,7 @@ class ResourceTypeFolderAnalyser {
                             );
                             providedCapabilities.add(
                                     ProvidedCapability.builder()
-                                            .withResourceTypes(resourceTypes)
+                                            .withResourceTypes(searchPathProcessesResourceTypes)
                                             .withVersion(resourceType.getVersion())
                                             .withSelectors(selectors)
                                             .withRequestExtension(script.getRequestExtension())
@@ -228,7 +233,7 @@ class ResourceTypeFolderAnalyser {
                     }
                     providedCapabilities.add(
                             ProvidedCapability.builder()
-                                    .withResourceTypes(resourceTypes)
+                                    .withResourceTypes(searchPathProcessesResourceTypes)
                                     .withVersion(resourceType.getVersion())
                                     .withSelectors(selectors)
                                     .withRequestExtension(script.getRequestExtension())
