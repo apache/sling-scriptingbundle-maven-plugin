@@ -20,7 +20,6 @@ package org.apache.sling.scriptingbundle.maven.plugin;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -31,17 +30,20 @@ import org.jetbrains.annotations.Nullable;
 class ProvidedCapability {
     private final Set<String> resourceTypes;
     private final String scriptEngine;
+    private final String scriptExtension;
     private final String extendsResourceType;
     private final String version;
     private final String requestExtension;
     private final String requestMethod;
     private final Set<String> selectors;
 
-    private ProvidedCapability(@NotNull Set<String> resourceTypes, @Nullable String scriptEngine, @Nullable String extendsResourceType,
+    private ProvidedCapability(@NotNull Set<String> resourceTypes, @Nullable String scriptEngine,
+                               @Nullable String scriptExtension, @Nullable String extendsResourceType,
                                @Nullable String version, @Nullable String requestExtension, @Nullable String requestMethod,
                                @NotNull Set<String> selectors) {
         this.resourceTypes = resourceTypes;
         this.scriptEngine = scriptEngine;
+        this.scriptExtension = scriptExtension;
         this.extendsResourceType = extendsResourceType;
         this.version = version;
         this.requestExtension = requestExtension;
@@ -61,6 +63,11 @@ class ProvidedCapability {
     @Nullable
     public String getScriptEngine() {
         return scriptEngine;
+    }
+
+    @Nullable
+    public String getScriptExtension() {
+        return scriptExtension;
     }
 
     @Nullable
@@ -90,7 +97,9 @@ class ProvidedCapability {
 
     @Override
     public int hashCode() {
-        return Objects.hash(resourceTypes, scriptEngine, version, requestExtension, extendsResourceType, requestMethod, selectors);
+        return Objects
+                .hash(resourceTypes, scriptEngine, scriptExtension, version, requestExtension, extendsResourceType, requestMethod,
+                        selectors);
     }
 
     @Override
@@ -101,6 +110,7 @@ class ProvidedCapability {
         if (obj instanceof ProvidedCapability) {
             ProvidedCapability other = (ProvidedCapability) obj;
             return Objects.equals(resourceTypes, other.resourceTypes) && Objects.equals(scriptEngine, other.scriptEngine) &&
+                    Objects.equals(scriptExtension, other.scriptExtension) &&
                     Objects.equals(version, other.version) && Objects.equals(requestExtension, other.requestExtension) &&
                     Objects.equals(extendsResourceType, other.extendsResourceType) && Objects.equals(requestMethod, other.requestMethod) &&
                     Objects.equals(selectors, other.selectors);
@@ -111,9 +121,10 @@ class ProvidedCapability {
     @Override
     public String toString() {
         return String.format(
-            "%s{resourceTypes=%s, scriptEngine=%s, version=%s, selectors=%s, requestExtension=%s, requestMethod=%s, " +
-                    "extendsResourceType=%s}",
-            this.getClass().getSimpleName(), resourceTypes, scriptEngine, version, selectors, requestExtension, requestMethod,
+            "%s{resourceTypes=%s, scriptEngine=%s, scriptEngineExtension=%s, version=%s, selectors=%s, requestExtension=%s, " +
+                    "requestMethod=%s, extendsResourceType=%s}",
+            this.getClass().getSimpleName(), resourceTypes, scriptEngine, scriptExtension, version, selectors, requestExtension,
+                requestMethod,
                 extendsResourceType
         );
     }
@@ -121,6 +132,7 @@ class ProvidedCapability {
     static class Builder {
         private Set<String> resourceTypes = new HashSet<>();
         private String scriptEngine;
+        private String scriptExtension;
         private String extendsResourceType;
         private String version;
         private String requestExtension;
@@ -145,6 +157,11 @@ class ProvidedCapability {
 
         Builder withScriptEngine(String scriptEngine) {
             this.scriptEngine = scriptEngine;
+            return this;
+        }
+
+        Builder withScriptExtension(String scriptExtension) {
+            this.scriptExtension = scriptExtension;
             return this;
         }
 
@@ -180,8 +197,8 @@ class ProvidedCapability {
             if (resourceTypes.isEmpty()) {
                 throw new IllegalStateException("The resourceTypes set is empty.");
             }
-            return new ProvidedCapability(resourceTypes, scriptEngine, extendsResourceType, version, requestExtension, requestMethod,
-                    selectors);
+            return new ProvidedCapability(resourceTypes, scriptEngine, scriptExtension, extendsResourceType, version,
+                    requestExtension, requestMethod, selectors);
         }
     }
 }

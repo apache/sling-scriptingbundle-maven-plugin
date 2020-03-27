@@ -129,11 +129,12 @@ public class MetadataMojo extends AbstractMojo {
     static final String CAPABILITY_NS = "sling.resourceType";
     static final String CAPABILITY_RESOURCE_TYPE_AT = "sling.resourceType:List<String>";
     static final String CAPABILITY_SELECTORS_AT = CAPABILITY_NS + ".selectors:List<String>";
-    static final String CAPABILITY_EXTENSIONS_AT = CAPABILITY_NS + ".extensions:List<String>";
-    static final String CAPABILITY_METHODS_AT = "sling.servlet.methods:List<String>";
+    static final String CAPABILITY_EXTENSIONS_AT = CAPABILITY_NS + ".extensions";
+    static final String CAPABILITY_METHODS_AT = "sling.servlet.methods";
     static final String CAPABILITY_VERSION_AT = "version:Version";
     static final String CAPABILITY_EXTENDS_AT = "extends";
     static final String CAPABILITY_SCRIPT_ENGINE_AT = "scriptEngine";
+    static final String CAPABILITY_SCRIPT_EXTENSION_AT = "scriptExtension";
     static final Map<String, String> DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING;
     static final Set<String> DEFAULT_SEARCH_PATHS;
 
@@ -186,7 +187,6 @@ public class MetadataMojo extends AbstractMojo {
             mappings.putAll(scriptEngineMappings);
         }
         scriptEngineMappings = mappings;
-        Set<String> searchPathsSet;
         if (searchPaths == null || searchPaths.isEmpty()) {
             searchPaths = DEFAULT_SEARCH_PATHS;
         }
@@ -224,6 +224,10 @@ public class MetadataMojo extends AbstractMojo {
             Optional.ofNullable(capability.getScriptEngine()).ifPresent(scriptEngine ->
                     builder.append(";")
                             .append(CAPABILITY_SCRIPT_ENGINE_AT).append("=").append("\"").append(scriptEngine).append("\"")
+            );
+            Optional.ofNullable(capability.getScriptExtension()).ifPresent(scriptExtension ->
+                    builder.append(";")
+                            .append(CAPABILITY_SCRIPT_EXTENSION_AT).append("=").append("\"").append(scriptExtension).append("\"")
             );
             Optional.ofNullable(capability.getVersion()).ifPresent(version ->
                     builder.append(";")

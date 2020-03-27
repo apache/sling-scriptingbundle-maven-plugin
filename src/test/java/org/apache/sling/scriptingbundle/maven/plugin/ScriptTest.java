@@ -51,7 +51,6 @@ public class ScriptTest {
         Script script = Script.parseScript("html.html");
         assertNotNull(script);
         assertEquals("html", script.getName());
-        assertEquals("html", script.getRequestExtension());
         assertNull(script.getRequestMethod());
         assertEquals("html", script.getScriptExtension());
     }

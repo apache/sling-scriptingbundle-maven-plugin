@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,7 +34,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.sling.scripting.bundle.tracker.ResourceType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.VersionRange;
 
 
@@ -198,12 +196,6 @@ class ResourceTypeFolderAnalyser {
                     if (!resourceType.getResourceLabel().equals(scriptName)) {
                         if (scriptFileName.split("\\.").length == 2 && scriptName != null &&
                                 scriptName.equals(script.getRequestExtension())) {
-                            /*
-                            it's unclear if the script name represents a selector or an extension, but it cannot be both;
-                            so we have:
-                                1. capability for the name as a selector
-                                2. capability for the name as a request extension
-                             */
                             LinkedHashSet<String> capSelectors = new LinkedHashSet<>(selectors);
                             capSelectors.add(scriptName);
                             providedCapabilities.add(
@@ -213,16 +205,7 @@ class ResourceTypeFolderAnalyser {
                                             .withSelectors(capSelectors)
                                             .withRequestMethod(script.getRequestMethod())
                                             .withScriptEngine(scriptEngine)
-                                            .build()
-                            );
-                            providedCapabilities.add(
-                                    ProvidedCapability.builder()
-                                            .withResourceTypes(searchPathProcessesResourceTypes)
-                                            .withVersion(resourceType.getVersion())
-                                            .withSelectors(selectors)
-                                            .withRequestExtension(script.getRequestExtension())
-                                            .withRequestMethod(script.getRequestMethod())
-                                            .withScriptEngine(scriptEngine)
+                                            .withScriptExtension(script.getScriptExtension())
                                             .build()
                             );
                         } else {
@@ -239,6 +222,7 @@ class ResourceTypeFolderAnalyser {
                                     .withRequestExtension(script.getRequestExtension())
                                     .withRequestMethod(script.getRequestMethod())
                                     .withScriptEngine(scriptEngine)
+                                    .withScriptExtension(script.getScriptExtension())
                                     .build()
                     );
                 } else {
