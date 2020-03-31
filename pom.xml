@@ -195,6 +195,12 @@
             <scope>compile</scope>
             <version>0.1.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.api</artifactId>
+            <version>2.22.0</version>
+            <scope>compile</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.osgi</groupId>

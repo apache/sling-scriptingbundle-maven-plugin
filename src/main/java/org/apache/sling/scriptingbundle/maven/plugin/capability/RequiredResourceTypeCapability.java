@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scriptingbundle.maven.plugin;
+package org.apache.sling.scriptingbundle.maven.plugin.capability;
 
 import java.util.Objects;
 
@@ -25,17 +25,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.VersionRange;
 
-public class RequiredCapability {
+public class RequiredResourceTypeCapability {
 
     private final String resourceType;
     private final VersionRange versionRange;
 
-    private RequiredCapability(@NotNull String resourceType, @Nullable VersionRange versionRange) {
+    private RequiredResourceTypeCapability(@NotNull String resourceType, @Nullable VersionRange versionRange) {
         this.resourceType = resourceType;
         this.versionRange = versionRange;
     }
 
-    static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -65,22 +65,22 @@ public class RequiredCapability {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof RequiredCapability) {
-            RequiredCapability other = (RequiredCapability) obj;
+        if (obj instanceof RequiredResourceTypeCapability) {
+            RequiredResourceTypeCapability other = (RequiredResourceTypeCapability) obj;
             return Objects.equals(resourceType, other.resourceType) && Objects.equals(versionRange, other.versionRange);
         }
         return false;
     }
 
-    static class Builder {
+    public static class Builder {
         private String resourceType;
         private VersionRange versionRange;
 
-        RequiredCapability build() {
-            return new RequiredCapability(resourceType, versionRange);
+        public RequiredResourceTypeCapability build() {
+            return new RequiredResourceTypeCapability(resourceType, versionRange);
         }
 
-        Builder withResourceType(String resourceType) {
+        public Builder withResourceType(String resourceType) {
             if (StringUtils.isEmpty(resourceType)) {
                 throw new NullPointerException("The required resourceType cannot be null or empty.");
             }
@@ -88,7 +88,7 @@ public class RequiredCapability {
             return this;
         }
 
-        Builder withVersionRange(VersionRange versionRange) {
+        public Builder withVersionRange(VersionRange versionRange) {
             this.versionRange = versionRange;
             return this;
         }

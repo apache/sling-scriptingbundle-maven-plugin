@@ -19,7 +19,6 @@
 package org.apache.sling.scriptingbundle.maven.plugin;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.script.ScriptEngineFactory;
 
@@ -41,6 +39,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.utils.io.DirectoryScanner;
+import org.apache.sling.api.servlets.ServletResolverConstants;
+import org.apache.sling.scriptingbundle.maven.plugin.capability.Capabilities;
+import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedResourceTypeCapability;
+import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedScriptCapability;
+import org.apache.sling.scriptingbundle.maven.plugin.capability.RequiredResourceTypeCapability;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Constants;
 import org.osgi.framework.VersionRange;
@@ -126,11 +129,12 @@ public class MetadataMojo extends AbstractMojo {
             "DELETE", "PATCH"));
     static final String EXTENDS_FILE = "extends";
     static final String REQUIRES_FILE = "requires";
-    static final String CAPABILITY_NS = "sling.resourceType";
-    static final String CAPABILITY_RESOURCE_TYPE_AT = "sling.resourceType:List<String>";
-    static final String CAPABILITY_SELECTORS_AT = CAPABILITY_NS + ".selectors:List<String>";
-    static final String CAPABILITY_EXTENSIONS_AT = CAPABILITY_NS + ".extensions";
-    static final String CAPABILITY_METHODS_AT = "sling.servlet.methods";
+    static final String CAPABILITY_NS = "sling.servlet";
+    static final String CAPABILITY_RESOURCE_TYPE_AT = ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + ":List<String>";
+    static final String CAPABILITY_SELECTORS_AT = ServletResolverConstants.SLING_SERVLET_SELECTORS + ":List<String>";
+    static final String CAPABILITY_EXTENSIONS_AT = ServletResolverConstants.SLING_SERVLET_EXTENSIONS;
+    static final String CAPABILITY_METHODS_AT = ServletResolverConstants.SLING_SERVLET_METHODS;
+    static final String CAPABILITY_PATH_AT = ServletResolverConstants.SLING_SERVLET_PATHS;
     static final String CAPABILITY_VERSION_AT = "version:Version";
     static final String CAPABILITY_EXTENDS_AT = "extends";
     static final String CAPABILITY_SCRIPT_ENGINE_AT = "scriptEngine";
@@ -176,12 +180,6 @@ public class MetadataMojo extends AbstractMojo {
         scanner.scan();
         List<String> includedDirectories = Arrays.asList(scanner.getIncludedDirectories());
         includedDirectories.sort(Collections.reverseOrder());
-        List<Path> resourceTypeDirectories =
-                includedDirectories.stream()
-                        .map(includedDirectory -> Paths.get(root, includedDirectory))
-                        .filter(new ResourceTypeFolderPredicate(getLog())).collect(Collectors.toList());
-
-        getLog().info("Detected resource type directories: " + resourceTypeDirectories);
         Map<String, String> mappings = new HashMap<>(DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING);
         if (scriptEngineMappings != null) {
             mappings.putAll(scriptEngineMappings);
@@ -190,7 +188,7 @@ public class MetadataMojo extends AbstractMojo {
         if (searchPaths == null || searchPaths.isEmpty()) {
             searchPaths = DEFAULT_SEARCH_PATHS;
         }
-        capabilities = generateCapabilities(root, resourceTypeDirectories);
+        capabilities = generateCapabilities(root, scanner);
         String providedCapabilitiesDefinition = getProvidedCapabilitiesString(capabilities);
         String requiredCapabilitiesDefinition = getRequiredCapabilitiesString(capabilities);
         project.getProperties().put(this.getClass().getPackage().getName() + "." + Constants.PROVIDE_CAPABILITY,
@@ -200,25 +198,35 @@ public class MetadataMojo extends AbstractMojo {
     }
 
     @NotNull
-    private Capabilities generateCapabilities(@NotNull String root, @NotNull List<Path> resourceTypeDirectories) {
-        ResourceTypeFolderAnalyser analyser = new ResourceTypeFolderAnalyser(getLog(), Paths.get(root), scriptEngineMappings,
-                searchPaths);
-        Set<ProvidedCapability> providedCapabilities = new LinkedHashSet<>();
-        Set<RequiredCapability> requiredCapabilities = new LinkedHashSet<>();
-        for (Path resourceTypeDirectory : resourceTypeDirectories) {
-            Capabilities resourceTypeCapabilities = analyser.getCapabilities(resourceTypeDirectory);
-            providedCapabilities.addAll(resourceTypeCapabilities.getProvidedCapabilities());
-            requiredCapabilities.addAll(resourceTypeCapabilities.getRequiredCapabilities());
-        }
-        return new Capabilities(providedCapabilities, requiredCapabilities);
+    private Capabilities generateCapabilities(@NotNull String root, @NotNull DirectoryScanner scanner) {
+        Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities = new LinkedHashSet<>();
+        Set<ProvidedScriptCapability> providedScriptCapabilities = new LinkedHashSet<>();
+        Set<RequiredResourceTypeCapability> requiredResourceTypeCapabilities = new LinkedHashSet<>();
+        FileProcessor fileProcessor = new FileProcessor(getLog(), searchPaths, scriptEngineMappings);
+        ResourceTypeFolderAnalyser resourceTypeFolderAnalyser = new ResourceTypeFolderAnalyser(getLog(), Paths.get(root), fileProcessor);
+        PathOnlyScriptAnalyser pathOnlyScriptAnalyser = new PathOnlyScriptAnalyser(getLog(), Paths.get(root), scriptEngineMappings, fileProcessor);
+        Arrays.stream(scanner.getIncludedDirectories()).map(dir -> Paths.get(root, dir)).forEach(folder -> {
+            Capabilities resourceTypeCapabilities = resourceTypeFolderAnalyser.getCapabilities(folder);
+            providedResourceTypeCapabilities.addAll(resourceTypeCapabilities.getProvidedResourceTypeCapabilities());
+            requiredResourceTypeCapabilities.addAll(resourceTypeCapabilities.getRequiredResourceTypeCapabilities());
+        });
+        Arrays.stream(scanner.getIncludedFiles()).map(file -> Paths.get(root, file)).forEach(file -> {
+            Capabilities pathCapabilities = pathOnlyScriptAnalyser.getProvidedScriptCapability(file);
+            providedScriptCapabilities.addAll(pathCapabilities.getProvidedScriptCapabilities());
+            requiredResourceTypeCapabilities.addAll(pathCapabilities.getRequiredResourceTypeCapabilities());
+        });
+
+        return new Capabilities(providedResourceTypeCapabilities, providedScriptCapabilities, requiredResourceTypeCapabilities);
     }
 
     @NotNull
     private String getProvidedCapabilitiesString(Capabilities capabilities) {
         StringBuilder builder = new StringBuilder();
-        int pcNum = capabilities.getProvidedCapabilities().size();
+        int pcNum = capabilities.getProvidedResourceTypeCapabilities().size();
+        int psNum = capabilities.getProvidedScriptCapabilities().size();
         int pcIndex = 0;
-        for (ProvidedCapability capability : capabilities.getProvidedCapabilities()) {
+        int psIndex = 0;
+        for (ProvidedResourceTypeCapability capability : capabilities.getProvidedResourceTypeCapabilities()) {
             builder.append(CAPABILITY_NS).append(";");
             processListAttribute(CAPABILITY_RESOURCE_TYPE_AT, builder,capability.getResourceTypes());
             Optional.ofNullable(capability.getScriptEngine()).ifPresent(scriptEngine ->
@@ -254,6 +262,18 @@ public class MetadataMojo extends AbstractMojo {
             }
             pcIndex++;
         }
+        if (builder.length() > 0 && psNum > 0) {
+            builder.append(",");
+        }
+        for (ProvidedScriptCapability scriptCapability : capabilities.getProvidedScriptCapabilities()) {
+            builder.append(CAPABILITY_NS).append(";").append(CAPABILITY_PATH_AT).append("=\"").append(scriptCapability.getPath()).append(
+                    "\";").append(CAPABILITY_SCRIPT_ENGINE_AT).append("=").append(scriptCapability.getScriptEngine()).append(";")
+                    .append(CAPABILITY_SCRIPT_EXTENSION_AT).append("=").append(scriptCapability.getScriptExtension());
+            if (psIndex < psNum - 1) {
+                builder.append(",");
+            }
+            psIndex++;
+        }
         return builder.toString();
     }
 
@@ -274,13 +294,14 @@ public class MetadataMojo extends AbstractMojo {
     @NotNull
     private String getRequiredCapabilitiesString(Capabilities capabilities) {
         StringBuilder builder = new StringBuilder();
-        int pcNum = capabilities.getRequiredCapabilities().size();
+        int pcNum = capabilities.getRequiredResourceTypeCapabilities().size();
         int pcIndex = 0;
-        for (RequiredCapability capability : capabilities.getRequiredCapabilities()) {
-            builder.append(CAPABILITY_NS).append(";filter:=\"").append("(&(!(sling.resourceType.selectors=*))");
+        for (RequiredResourceTypeCapability capability : capabilities.getRequiredResourceTypeCapabilities()) {
+            builder.append(CAPABILITY_NS).append(";filter:=\"").append("(&(!(" + ServletResolverConstants.SLING_SERVLET_SELECTORS + "=*))");
             VersionRange versionRange = capability.getVersionRange();
             if (versionRange != null) {
-                builder.append("(&").append(versionRange.toFilterString("version")).append("(").append(CAPABILITY_NS).append("=").append(capability.getResourceType()).append("))");
+                builder.append("(&").append(versionRange.toFilterString("version")).append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append(
+                        "=").append(capability.getResourceType()).append("))");
             } else {
                 builder.append("(").append(CAPABILITY_NS).append("=").append(capability.getResourceType()).append(")");
             }
@@ -295,6 +316,10 @@ public class MetadataMojo extends AbstractMojo {
 
     Capabilities getCapabilities() {
         return capabilities;
+    }
+
+    Map<String, String> getScriptEngineMappings() {
+        return scriptEngineMappings;
     }
 
 }

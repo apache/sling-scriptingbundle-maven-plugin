@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scriptingbundle.maven.plugin;
+package org.apache.sling.scriptingbundle.maven.plugin.capability;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-class ProvidedCapability {
+public class ProvidedResourceTypeCapability {
     private final Set<String> resourceTypes;
     private final String scriptEngine;
     private final String scriptExtension;
@@ -37,10 +37,10 @@ class ProvidedCapability {
     private final String requestMethod;
     private final Set<String> selectors;
 
-    private ProvidedCapability(@NotNull Set<String> resourceTypes, @Nullable String scriptEngine,
-                               @Nullable String scriptExtension, @Nullable String extendsResourceType,
-                               @Nullable String version, @Nullable String requestExtension, @Nullable String requestMethod,
-                               @NotNull Set<String> selectors) {
+    private ProvidedResourceTypeCapability(@NotNull Set<String> resourceTypes, @Nullable String scriptEngine,
+                                           @Nullable String scriptExtension, @Nullable String extendsResourceType,
+                                           @Nullable String version, @Nullable String requestExtension, @Nullable String requestMethod,
+                                           @NotNull Set<String> selectors) {
         this.resourceTypes = resourceTypes;
         this.scriptEngine = scriptEngine;
         this.scriptExtension = scriptExtension;
@@ -51,7 +51,7 @@ class ProvidedCapability {
         this.selectors = selectors;
     }
 
-    static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -107,8 +107,8 @@ class ProvidedCapability {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ProvidedCapability) {
-            ProvidedCapability other = (ProvidedCapability) obj;
+        if (obj instanceof ProvidedResourceTypeCapability) {
+            ProvidedResourceTypeCapability other = (ProvidedResourceTypeCapability) obj;
             return Objects.equals(resourceTypes, other.resourceTypes) && Objects.equals(scriptEngine, other.scriptEngine) &&
                     Objects.equals(scriptExtension, other.scriptExtension) &&
                     Objects.equals(version, other.version) && Objects.equals(requestExtension, other.requestExtension) &&
@@ -129,7 +129,7 @@ class ProvidedCapability {
         );
     }
 
-    static class Builder {
+    public static class Builder {
         private Set<String> resourceTypes = new HashSet<>();
         private String scriptEngine;
         private String scriptExtension;
@@ -139,7 +139,7 @@ class ProvidedCapability {
         private String requestMethod;
         private Set<String> selectors = Collections.emptySet();
 
-        Builder withResourceTypes(Set<String> resourceTypes) {
+        public Builder withResourceTypes(Set<String> resourceTypes) {
             if (resourceTypes == null || resourceTypes.isEmpty()) {
                 throw new NullPointerException("The script's resourceTypes cannot be null or empty.");
             }
@@ -147,7 +147,7 @@ class ProvidedCapability {
             return this;
         }
 
-        Builder withResourceType(String resourceType) {
+        public Builder withResourceType(String resourceType) {
             if (StringUtils.isEmpty(resourceType)) {
                 throw new NullPointerException("The script's resourceType cannot be null or empty.");
             }
@@ -155,37 +155,37 @@ class ProvidedCapability {
             return this;
         }
 
-        Builder withScriptEngine(String scriptEngine) {
+        public Builder withScriptEngine(String scriptEngine) {
             this.scriptEngine = scriptEngine;
             return this;
         }
 
-        Builder withScriptExtension(String scriptExtension) {
+        public Builder withScriptExtension(String scriptExtension) {
             this.scriptExtension = scriptExtension;
             return this;
         }
 
-        Builder withExtendsResourceType(String extendsResourceType) {
+        public Builder withExtendsResourceType(String extendsResourceType) {
             this.extendsResourceType = extendsResourceType;
             return this;
         }
 
-        Builder withVersion(String version) {
+        public Builder withVersion(String version) {
             this.version = version;
             return this;
         }
 
-        Builder withRequestExtension(String requestExtension) {
+        public Builder withRequestExtension(String requestExtension) {
             this.requestExtension = requestExtension;
             return this;
         }
 
-        Builder withRequestMethod(String requestMethod) {
+        public Builder withRequestMethod(String requestMethod) {
             this.requestMethod = requestMethod;
             return this;
         }
 
-        Builder withSelectors(Set<String> selectors) {
+        public Builder withSelectors(Set<String> selectors) {
             if (selectors == null) {
                 throw new NullPointerException("The resourceType selectors list cannot be null.");
             }
@@ -193,11 +193,11 @@ class ProvidedCapability {
             return this;
         }
 
-        ProvidedCapability build() {
+        public ProvidedResourceTypeCapability build() {
             if (resourceTypes.isEmpty()) {
                 throw new IllegalStateException("The resourceTypes set is empty.");
             }
-            return new ProvidedCapability(resourceTypes, scriptEngine, scriptExtension, extendsResourceType, version,
+            return new ProvidedResourceTypeCapability(resourceTypes, scriptEngine, scriptExtension, extendsResourceType, version,
                     requestExtension, requestMethod, selectors);
         }
     }
