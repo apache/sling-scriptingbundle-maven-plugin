@@ -139,17 +139,17 @@ public class ProvidedResourceTypeCapability {
         private String requestMethod;
         private Set<String> selectors = Collections.emptySet();
 
-        public Builder withResourceTypes(Set<String> resourceTypes) {
-            if (resourceTypes == null || resourceTypes.isEmpty()) {
-                throw new NullPointerException("The script's resourceTypes cannot be null or empty.");
+        public Builder withResourceTypes(@NotNull Set<String> resourceTypes) {
+            if (resourceTypes.isEmpty()) {
+                throw new IllegalArgumentException("The script's resourceTypes cannot be null or empty.");
             }
             this.resourceTypes = resourceTypes;
             return this;
         }
 
-        public Builder withResourceType(String resourceType) {
+        public Builder withResourceType(@NotNull String resourceType) {
             if (StringUtils.isEmpty(resourceType)) {
-                throw new NullPointerException("The script's resourceType cannot be null or empty.");
+                throw new IllegalArgumentException("The script's resourceType cannot be null or empty.");
             }
             resourceTypes.add(resourceType);
             return this;
@@ -185,18 +185,28 @@ public class ProvidedResourceTypeCapability {
             return this;
         }
 
-        public Builder withSelectors(Set<String> selectors) {
-            if (selectors == null) {
-                throw new NullPointerException("The resourceType selectors list cannot be null.");
-            }
+        public Builder withSelectors(@NotNull Set<String> selectors) {
             this.selectors = selectors;
             return this;
         }
 
-        public ProvidedResourceTypeCapability build() {
-            if (resourceTypes.isEmpty()) {
-                throw new IllegalStateException("The resourceTypes set is empty.");
+        public Builder fromCapability(@NotNull ProvidedResourceTypeCapability capability) {
+            if (capability.getResourceTypes().isEmpty()) {
+                throw new IllegalArgumentException("The script's resourceTypes cannot be null or empty.");
             }
+            this.resourceTypes = capability.getResourceTypes();
+            this.scriptEngine = capability.getScriptEngine();
+            this.scriptExtension = capability.getScriptExtension();
+            this.extendsResourceType = capability.getExtendsResourceType();
+            this.version = capability.getVersion();
+            this.requestExtension = capability.getRequestExtension();
+            this.requestMethod = capability.getRequestMethod();
+            this.selectors = capability.getSelectors();
+            return this;
+        }
+
+
+        public ProvidedResourceTypeCapability build() {
             return new ProvidedResourceTypeCapability(resourceTypes, scriptEngine, scriptExtension, extendsResourceType, version,
                     requestExtension, requestMethod, selectors);
         }

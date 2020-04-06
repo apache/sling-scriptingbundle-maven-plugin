@@ -83,8 +83,7 @@ public class MetadataMojoTest {
                 ProvidedResourceTypeCapability.builder().withResourceType("org/apache/sling/foo/depth1/depth2/depth3").withScriptEngine("htl").withScriptExtension("html").withSelectors(new LinkedHashSet<>(Arrays.asList("depth3-selector"))).build(),
 
                 // org.apache.sling.foobar/1.0.0
-                ProvidedResourceTypeCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withScriptExtension("html").withVersion("1.0.0").build(),
-                ProvidedResourceTypeCapability.builder().withResourceType("org.apache.sling.foobar").withVersion("1.0.0").withExtendsResourceType("org/apache/sling/bar").build(),
+                ProvidedResourceTypeCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withScriptExtension("html").withVersion("1.0.0").withExtendsResourceType("org/apache/sling/bar").build(),
                 ProvidedResourceTypeCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withScriptExtension("html").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
                         , "100"))).build(),
                 ProvidedResourceTypeCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl").withScriptExtension("html").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"

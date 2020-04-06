@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -59,12 +60,27 @@ public class FileProcessor {
                     String[] extendParts = extend.split(";");
                     String extendedResourceType = extendParts[0];
                     String extendedResourceTypeVersion = extendParts.length > 1 ? extendParts[1] : null;
-                    providedCapabilities.add(
-                            ProvidedResourceTypeCapability.builder()
-                                    .withResourceTypes(processSearchPathResourceTypes(resourceType))
-                                    .withVersion(resourceType.getVersion())
-                                    .withExtendsResourceType(extendedResourceType)
-                                    .build());
+                    Set<String> searchPathResourceTypes = processSearchPathResourceTypes(resourceType);
+                    Optional<ProvidedResourceTypeCapability> rootCapability = providedCapabilities.stream().filter(capability ->
+                        capability.getResourceTypes().equals(searchPathResourceTypes) && capability.getSelectors().isEmpty() &&
+                                StringUtils.isEmpty(capability.getRequestMethod()) && StringUtils.isEmpty(capability.getRequestExtension())
+                    ).findFirst();
+                    rootCapability.ifPresent(capability -> {
+                        providedCapabilities.remove(capability);
+                        ProvidedResourceTypeCapability replacement =
+                                ProvidedResourceTypeCapability.builder().fromCapability(capability)
+                                        .withExtendsResourceType(extendedResourceType).build();
+                        providedCapabilities.add(replacement);
+
+                    });
+                    if (!rootCapability.isPresent()) {
+                        providedCapabilities.add(
+                                ProvidedResourceTypeCapability.builder()
+                                        .withResourceTypes(processSearchPathResourceTypes(resourceType))
+                                        .withVersion(resourceType.getVersion())
+                                        .withExtendsResourceType(extendedResourceType)
+                                        .build());
+                    }
                     RequiredResourceTypeCapability.Builder requiredBuilder =
                             RequiredResourceTypeCapability.builder().withResourceType(extendedResourceType);
                     extractVersionRange(extendsFile, requiredBuilder, extendedResourceTypeVersion);
@@ -115,38 +131,31 @@ public class FileProcessor {
                 if (scriptEngine != null) {
                     String scriptName = script.getName();
                     Set<String> searchPathProcessesResourceTypes = processSearchPathResourceTypes(resourceType);
-                    if (!resourceType.getResourceLabel().equals(scriptName)) {
-                        if (scriptFileName.split("\\.").length == 2 && scriptName != null &&
-                                scriptName.equals(script.getRequestExtension())) {
-                            LinkedHashSet<String> capSelectors = new LinkedHashSet<>(selectors);
-                            capSelectors.add(scriptName);
-                            providedCapabilities.add(
-                                    ProvidedResourceTypeCapability.builder()
-                                            .withResourceTypes(searchPathProcessesResourceTypes)
-                                            .withVersion(resourceType.getVersion())
-                                            .withSelectors(capSelectors)
-                                            .withRequestMethod(script.getRequestMethod())
-                                            .withScriptEngine(scriptEngine)
-                                            .withScriptExtension(script.getScriptExtension())
-                                            .build()
-                            );
-                        } else {
-                            if (scriptName != null && !MetadataMojo.METHODS.contains(scriptName)) {
-                                selectors.add(script.getName());
-                            }
-                        }
+                    if (scriptName != null && !resourceType.getResourceLabel().equals(scriptName)) {
+                        selectors.add(script.getName());
                     }
-                    providedCapabilities.add(
-                            ProvidedResourceTypeCapability.builder()
-                                    .withResourceTypes(searchPathProcessesResourceTypes)
-                                    .withVersion(resourceType.getVersion())
-                                    .withSelectors(selectors)
-                                    .withRequestExtension(script.getRequestExtension())
-                                    .withRequestMethod(script.getRequestMethod())
-                                    .withScriptEngine(scriptEngine)
-                                    .withScriptExtension(script.getScriptExtension())
-                                    .build()
+                    Optional<ProvidedResourceTypeCapability> extendsCapability = Optional.empty();
+                    if (selectors.isEmpty() && StringUtils.isEmpty(script.getRequestExtension()) && StringUtils.isEmpty(script.getRequestMethod())) {
+                         extendsCapability =
+                                 providedCapabilities.stream().filter(capability -> StringUtils.isNotEmpty(capability.getExtendsResourceType()) &&
+                                 capability.getResourceTypes().equals(searchPathProcessesResourceTypes) &&
+                                 capability.getSelectors().isEmpty() && StringUtils.isEmpty(capability.getRequestExtension()) &&
+                                 StringUtils.isEmpty(capability.getRequestMethod())).findAny();
+                    }
+                    ProvidedResourceTypeCapability.Builder builder = ProvidedResourceTypeCapability.builder()
+                            .withResourceTypes(searchPathProcessesResourceTypes)
+                            .withVersion(resourceType.getVersion())
+                            .withSelectors(selectors)
+                            .withRequestExtension(script.getRequestExtension())
+                            .withRequestMethod(script.getRequestMethod())
+                            .withScriptEngine(scriptEngine)
+                            .withScriptExtension(script.getScriptExtension());
+                    extendsCapability.ifPresent(capability -> {
+                                builder.withExtendsResourceType(capability.getExtendsResourceType());
+                                providedCapabilities.remove(capability);
+                            }
                     );
+                    providedCapabilities.add(builder.build());
                 } else {
                     log.warn(String.format("Cannot find a script engine mapping for script %s.", scriptPath.toString()));
                 }
