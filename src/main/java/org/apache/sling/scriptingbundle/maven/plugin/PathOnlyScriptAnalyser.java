@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.Capabilities;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedScriptCapability;
@@ -50,36 +52,38 @@ public class PathOnlyScriptAnalyser {
 
     public @NotNull Capabilities getProvidedScriptCapability(@NotNull Path file) {
         if (Files.isRegularFile(file) && file.startsWith(scriptsDirectory)) {
-            boolean useFile = true;
-            Path parent = file.getParent();
-            Path loopParent = parent;
-            while (useFile && loopParent != null && !loopParent.equals(scriptsDirectory)) {
-                useFile = isNotAResourceTypeFolder.test(loopParent);
-                loopParent = loopParent.getParent();
-            }
-            if (parent != null && useFile) {
-                Path fileName = file.getFileName();
-                if (fileName != null) {
-                    String name = fileName.toString();
-                    int dotLastIndex = name.lastIndexOf('.');
-                    if (dotLastIndex > -1 && dotLastIndex != name.length() - 1) {
-                        String scriptPath = "/" + scriptsDirectory.relativize(file).toString();
-                        ProvidedScriptCapability providedScriptCapability =
-                                ProvidedScriptCapability.builder(scriptEngineMappings).withPath(scriptPath).build();
-                        Path requires = parent.resolve(MetadataMojo.REQUIRES_FILE);
-                        Set<RequiredResourceTypeCapability> requiredCapabilities = new HashSet<>();
-                        if (Files.exists(requires)) {
-                            fileProcessor.processRequiresFile(requires, requiredCapabilities);
+            String filePath = file.toString();
+            String extension = FilenameUtils.getExtension(filePath);
+            if (StringUtils.isNotEmpty(extension) && scriptEngineMappings.containsKey(extension)) {
+                boolean useFile = true;
+                Path parent = file.getParent();
+                Path loopParent = parent;
+                while (useFile && loopParent != null && !loopParent.equals(scriptsDirectory)) {
+                    useFile = isNotAResourceTypeFolder.test(loopParent);
+                    loopParent = loopParent.getParent();
+                }
+                if (parent != null && useFile) {
+                    Path fileName = file.getFileName();
+                    if (fileName != null) {
+                        String name = fileName.toString();
+                        int dotLastIndex = name.lastIndexOf('.');
+                        if (dotLastIndex > -1 && dotLastIndex != name.length() - 1) {
+                            String scriptPath = "/" + scriptsDirectory.relativize(file).toString();
+                            ProvidedScriptCapability providedScriptCapability =
+                                    ProvidedScriptCapability.builder(scriptEngineMappings).withPath(scriptPath).build();
+                            Path requires = parent.resolve(MetadataMojo.REQUIRES_FILE);
+                            Set<RequiredResourceTypeCapability> requiredCapabilities = new HashSet<>();
+                            if (Files.exists(requires)) {
+                                fileProcessor.processRequiresFile(requires, requiredCapabilities);
+                            }
+                            return new Capabilities(Collections.emptySet(),
+                                    new HashSet<>(Arrays.asList(providedScriptCapability)),
+                                    requiredCapabilities);
                         }
-                        return new Capabilities(Collections.emptySet(),
-                                new HashSet<>(Arrays.asList(providedScriptCapability)),
-                                requiredCapabilities);
                     }
                 }
             }
         }
         return Capabilities.EMPTY;
     }
-
-
 }

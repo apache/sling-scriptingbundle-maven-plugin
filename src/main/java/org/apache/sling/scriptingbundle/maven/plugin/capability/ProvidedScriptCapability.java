@@ -90,12 +90,12 @@ public class ProvidedScriptCapability {
                 throw new IllegalStateException(String.format("Path %s does not seem to have an extension.", path));
             }
             String extension = path.substring(lastDotIndex + 1);
-            String scripEngine = scriptEngineMappings.get(extension);
-            if (StringUtils.isEmpty(scripEngine)) {
+            String scriptEngine = scriptEngineMappings.get(extension);
+            if (StringUtils.isEmpty(scriptEngine)) {
                 throw new IllegalStateException(String.format("Path %s does not seem to have an extension mapped to a script engine.",
                         path));
             }
-            return new ProvidedScriptCapability(path, extension, scripEngine);
+            return new ProvidedScriptCapability(path, extension, scriptEngine);
         }
 
         public ProvidedScriptCapability.Builder withPath(String path) {

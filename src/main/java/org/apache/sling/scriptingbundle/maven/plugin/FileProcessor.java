@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.sling.scripting.bundle.tracker.ResourceType;
@@ -114,56 +115,63 @@ public class FileProcessor {
 
     void processScriptFile(@NotNull Path resourceTypeDirectory, @NotNull Path scriptPath,
                                    @NotNull ResourceType resourceType, @NotNull Set<ProvidedResourceTypeCapability> providedCapabilities) {
-        Path scriptFile = scriptPath.getFileName();
-        if (scriptFile != null) {
-            Path relativeResourceTypeFolder = resourceTypeDirectory.relativize(scriptPath);
-            int pathSegments = relativeResourceTypeFolder.getNameCount();
-            LinkedHashSet<String> selectors = new LinkedHashSet<>();
-            if (pathSegments > 1) {
-                for (int i = 0; i < pathSegments - 1; i++) {
-                    selectors.add(relativeResourceTypeFolder.getName(i).toString());
+        String filePath = scriptPath.toString();
+        String extension = FilenameUtils.getExtension(filePath);
+        if (StringUtils.isNotEmpty(extension) && scriptEngineMappings.containsKey(extension)) {
+            Path scriptFile = scriptPath.getFileName();
+            if (scriptFile != null) {
+                Path relativeResourceTypeFolder = resourceTypeDirectory.relativize(scriptPath);
+                int pathSegments = relativeResourceTypeFolder.getNameCount();
+                LinkedHashSet<String> selectors = new LinkedHashSet<>();
+                if (pathSegments > 1) {
+                    for (int i = 0; i < pathSegments - 1; i++) {
+                        selectors.add(relativeResourceTypeFolder.getName(i).toString());
+                    }
                 }
-            }
-            String scriptFileName = scriptFile.toString();
-            Script script = Script.parseScript(scriptFileName);
-            if (script != null) {
-                String scriptEngine = scriptEngineMappings.get(script.getScriptExtension());
-                if (scriptEngine != null) {
-                    String scriptName = script.getName();
-                    Set<String> searchPathProcessesResourceTypes = processSearchPathResourceTypes(resourceType);
-                    if (scriptName != null && !resourceType.getResourceLabel().equals(scriptName)) {
-                        selectors.add(script.getName());
+                String scriptFileName = scriptFile.toString();
+                Script script = Script.parseScript(scriptFileName);
+                if (script != null) {
+                    String scriptEngine = scriptEngineMappings.get(script.getScriptExtension());
+                    if (scriptEngine != null) {
+                        String scriptName = script.getName();
+                        Set<String> searchPathProcessesResourceTypes = processSearchPathResourceTypes(resourceType);
+                        if (scriptName != null && !resourceType.getResourceLabel().equals(scriptName)) {
+                            selectors.add(script.getName());
+                        }
+                        Optional<ProvidedResourceTypeCapability> extendsCapability = Optional.empty();
+                        if (selectors.isEmpty() && StringUtils.isEmpty(script.getRequestExtension()) &&
+                                StringUtils.isEmpty(script.getRequestMethod())) {
+                            extendsCapability =
+                                    providedCapabilities.stream()
+                                            .filter(capability -> StringUtils.isNotEmpty(capability.getExtendsResourceType()) &&
+                                                    capability.getResourceTypes().equals(searchPathProcessesResourceTypes) &&
+                                                    capability.getSelectors().isEmpty() &&
+                                                    StringUtils.isEmpty(capability.getRequestExtension()) &&
+                                                    StringUtils.isEmpty(capability.getRequestMethod())).findAny();
+                        }
+                        ProvidedResourceTypeCapability.Builder builder = ProvidedResourceTypeCapability.builder()
+                                .withResourceTypes(searchPathProcessesResourceTypes)
+                                .withVersion(resourceType.getVersion())
+                                .withSelectors(selectors)
+                                .withRequestExtension(script.getRequestExtension())
+                                .withRequestMethod(script.getRequestMethod())
+                                .withScriptEngine(scriptEngine)
+                                .withScriptExtension(script.getScriptExtension());
+                        extendsCapability.ifPresent(capability -> {
+                                    builder.withExtendsResourceType(capability.getExtendsResourceType());
+                                    providedCapabilities.remove(capability);
+                                }
+                        );
+                        providedCapabilities.add(builder.build());
+                    } else {
+                        log.warn(String.format("Cannot find a script engine mapping for script %s.", scriptPath.toString()));
                     }
-                    Optional<ProvidedResourceTypeCapability> extendsCapability = Optional.empty();
-                    if (selectors.isEmpty() && StringUtils.isEmpty(script.getRequestExtension()) && StringUtils.isEmpty(script.getRequestMethod())) {
-                         extendsCapability =
-                                 providedCapabilities.stream().filter(capability -> StringUtils.isNotEmpty(capability.getExtendsResourceType()) &&
-                                 capability.getResourceTypes().equals(searchPathProcessesResourceTypes) &&
-                                 capability.getSelectors().isEmpty() && StringUtils.isEmpty(capability.getRequestExtension()) &&
-                                 StringUtils.isEmpty(capability.getRequestMethod())).findAny();
-                    }
-                    ProvidedResourceTypeCapability.Builder builder = ProvidedResourceTypeCapability.builder()
-                            .withResourceTypes(searchPathProcessesResourceTypes)
-                            .withVersion(resourceType.getVersion())
-                            .withSelectors(selectors)
-                            .withRequestExtension(script.getRequestExtension())
-                            .withRequestMethod(script.getRequestMethod())
-                            .withScriptEngine(scriptEngine)
-                            .withScriptExtension(script.getScriptExtension());
-                    extendsCapability.ifPresent(capability -> {
-                                builder.withExtendsResourceType(capability.getExtendsResourceType());
-                                providedCapabilities.remove(capability);
-                            }
-                    );
-                    providedCapabilities.add(builder.build());
                 } else {
-                    log.warn(String.format("Cannot find a script engine mapping for script %s.", scriptPath.toString()));
+                    log.warn(String.format("File %s does not denote a script.", scriptPath.toString()));
                 }
             } else {
-                log.warn(String.format("File %s does not denote a script.", scriptPath.toString()));
+                log.warn(String.format("Skipping path %s since it has 0 elements.", scriptPath.toString()));
             }
-        } else {
-            log.warn(String.format("Skipping path %s since it has 0 elements.", scriptPath.toString()));
         }
     }
 
