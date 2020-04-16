@@ -33,7 +33,6 @@ import java.util.Set;
 import javax.script.ScriptEngineFactory;
 
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -62,12 +61,13 @@ public class MetadataMojo extends AbstractMojo {
     private MavenProject project;
 
     /**
-     * Defines where this goal will look for scripts in the project.
+     * Defines where this goal will look for scripts in the project. By default the {@code src/main/scripts} and
+     * {@code src/main/resources/javax.script} folders will be considered.
      *
-     * @since 0.1.0
+     * @since 0.2.0
      */
-    @Parameter(property = "scriptingbundle.sourceDirectory", defaultValue = "${project.build.scriptSourceDirectory}")
-    private String sourceDirectory;
+    @Parameter(property = "scriptingbundle.sourceDirectories")
+    private Set<String> sourceDirectories;
 
     /**
      * Allows overriding the default extension to script engine mapping, in order to correctly generate the
@@ -141,6 +141,7 @@ public class MetadataMojo extends AbstractMojo {
     static final String CAPABILITY_SCRIPT_EXTENSION_AT = "scriptExtension";
     static final Map<String, String> DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING;
     static final Set<String> DEFAULT_SEARCH_PATHS;
+    static final Set<String> DEFAULT_SOURCE_DIRECTORIES;
 
     static {
         DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING = new HashMap<>();
@@ -159,42 +160,57 @@ public class MetadataMojo extends AbstractMojo {
 //        DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING.put("html", "thymeleaf");
 
         DEFAULT_SEARCH_PATHS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("/libs", "/apps")));
+        DEFAULT_SOURCE_DIRECTORIES = new HashSet<>();
+        DEFAULT_SOURCE_DIRECTORIES.add(Paths.get("src", "main", "scripts").toString());
+        DEFAULT_SOURCE_DIRECTORIES.add(Paths.get("src", "main", "resources", "javax.script").toString());
     }
 
     private Capabilities capabilities;
 
-    public void execute() throws MojoExecutionException {
-        File sdFile = new File(sourceDirectory);
-        if (!sdFile.exists()) {
-            sdFile = new File(project.getBasedir(), sourceDirectory);
+    public void execute() {
+        Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities = new HashSet<>();
+        Set<ProvidedScriptCapability> providedScriptCapabilities = new HashSet<>();
+        Set<RequiredResourceTypeCapability> requiredResourceTypeCapabilities = new HashSet<>();
+        capabilities = new Capabilities(new HashSet<>(), new HashSet<>(), new HashSet<>());
+        if (sourceDirectories.isEmpty()) {
+            sourceDirectories = new HashSet<>(DEFAULT_SOURCE_DIRECTORIES);
+        }
+        sourceDirectories.stream().map(sourceDirectory -> {
+            File sdFile = new File(sourceDirectory);
             if (!sdFile.exists()) {
-                throw new MojoExecutionException("Cannot find file " + sourceDirectory + ".");
+                sdFile = new File(project.getBasedir(), sourceDirectory);
             }
-        }
-        final String root = sdFile.getAbsolutePath();
-        DirectoryScanner scanner = new DirectoryScanner();
-        scanner.setBasedir(sdFile);
-        scanner.setIncludes("**");
-        scanner.setExcludes("**/*.class");
-        scanner.addDefaultExcludes();
-        scanner.scan();
-        List<String> includedDirectories = Arrays.asList(scanner.getIncludedDirectories());
-        includedDirectories.sort(Collections.reverseOrder());
-        Map<String, String> mappings = new HashMap<>(DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING);
-        if (scriptEngineMappings != null) {
-            mappings.putAll(scriptEngineMappings);
-        }
-        scriptEngineMappings = mappings;
-        if (searchPaths == null || searchPaths.isEmpty()) {
-            searchPaths = DEFAULT_SEARCH_PATHS;
-        }
-        capabilities = generateCapabilities(root, scanner);
+            return sdFile;
+        }).filter(sourceDirectory -> sourceDirectory.exists() && sourceDirectory.isDirectory()).forEach(sourceDirectory -> {
+            final String root = sourceDirectory.getAbsolutePath();
+            DirectoryScanner scanner = new DirectoryScanner();
+            scanner.setBasedir(sourceDirectory);
+            scanner.setIncludes("**");
+            scanner.setExcludes("**/*.class");
+            scanner.addDefaultExcludes();
+            scanner.scan();
+            List<String> includedDirectories = Arrays.asList(scanner.getIncludedDirectories());
+            includedDirectories.sort(Collections.reverseOrder());
+            Map<String, String> mappings = new HashMap<>(DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING);
+            if (scriptEngineMappings != null) {
+                mappings.putAll(scriptEngineMappings);
+            }
+            scriptEngineMappings = mappings;
+            if (searchPaths == null || searchPaths.isEmpty()) {
+                searchPaths = DEFAULT_SEARCH_PATHS;
+            }
+            Capabilities folderCapabilities = generateCapabilities(root, scanner);
+            providedResourceTypeCapabilities.addAll(folderCapabilities.getProvidedResourceTypeCapabilities());
+            providedScriptCapabilities.addAll(folderCapabilities.getProvidedScriptCapabilities());
+            requiredResourceTypeCapabilities.addAll(folderCapabilities.getRequiredResourceTypeCapabilities());
+        });
+        capabilities = new Capabilities(providedResourceTypeCapabilities, providedScriptCapabilities, requiredResourceTypeCapabilities);
         String providedCapabilitiesDefinition = getProvidedCapabilitiesString(capabilities);
         String requiredCapabilitiesDefinition = getRequiredCapabilitiesString(capabilities);
         project.getProperties().put(this.getClass().getPackage().getName() + "." + Constants.PROVIDE_CAPABILITY,
-                    providedCapabilitiesDefinition);
+                providedCapabilitiesDefinition);
         project.getProperties().put(this.getClass().getPackage().getName() + "." + Constants.REQUIRE_CAPABILITY,
-                    requiredCapabilitiesDefinition);
+                requiredCapabilitiesDefinition);
     }
 
     @NotNull
