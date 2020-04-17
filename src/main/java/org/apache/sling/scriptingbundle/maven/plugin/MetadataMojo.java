@@ -19,19 +19,23 @@
 package org.apache.sling.scriptingbundle.maven.plugin;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import javax.script.ScriptEngineFactory;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -175,35 +179,56 @@ public class MetadataMojo extends AbstractMojo {
         if (sourceDirectories.isEmpty()) {
             sourceDirectories = new HashSet<>(DEFAULT_SOURCE_DIRECTORIES);
         }
-        sourceDirectories.stream().map(sourceDirectory -> {
-            File sdFile = new File(sourceDirectory);
-            if (!sdFile.exists()) {
-                sdFile = new File(project.getBasedir(), sourceDirectory);
-            }
-            return sdFile;
-        }).filter(sourceDirectory -> sourceDirectory.exists() && sourceDirectory.isDirectory()).forEach(sourceDirectory -> {
-            final String root = sourceDirectory.getAbsolutePath();
-            DirectoryScanner scanner = new DirectoryScanner();
-            scanner.setBasedir(sourceDirectory);
-            scanner.setIncludes("**");
-            scanner.setExcludes("**/*.class");
-            scanner.addDefaultExcludes();
-            scanner.scan();
-            List<String> includedDirectories = Arrays.asList(scanner.getIncludedDirectories());
-            includedDirectories.sort(Collections.reverseOrder());
-            Map<String, String> mappings = new HashMap<>(DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING);
-            if (scriptEngineMappings != null) {
-                mappings.putAll(scriptEngineMappings);
-            }
-            scriptEngineMappings = mappings;
-            if (searchPaths == null || searchPaths.isEmpty()) {
-                searchPaths = DEFAULT_SEARCH_PATHS;
-            }
-            Capabilities folderCapabilities = generateCapabilities(root, scanner);
-            providedResourceTypeCapabilities.addAll(folderCapabilities.getProvidedResourceTypeCapabilities());
-            providedScriptCapabilities.addAll(folderCapabilities.getProvidedScriptCapabilities());
-            requiredResourceTypeCapabilities.addAll(folderCapabilities.getRequiredResourceTypeCapabilities());
-        });
+        File workDirectory = new File(new File(project.getBuild().getDirectory()), "scriptingbundle-maven-plugin");
+        if (workDirectory.exists() || workDirectory.mkdirs()) {
+            sourceDirectories.stream().map(sourceDirectory -> {
+                File sdFile = new File(sourceDirectory);
+                if (!sdFile.exists()) {
+                    sdFile = new File(project.getBasedir(), sourceDirectory);
+                }
+                return sdFile;
+            }).filter(sourceDirectory -> sourceDirectory.exists() && sourceDirectory.isDirectory()).forEach(sourceDirectory -> {
+                DirectoryScanner scanner = new DirectoryScanner();
+                scanner.setBasedir(sourceDirectory);
+                scanner.setIncludes("**");
+                scanner.setExcludes("**/*.class");
+                scanner.addDefaultExcludes();
+                scanner.scan();
+                try {
+                    for (String file : scanner.getIncludedFiles()) {
+                        String fileName = FilenameUtils.getName(file);
+                        if (EXTENDS_FILE.equals(fileName) || REQUIRES_FILE.equals(fileName)) {
+                            Files.createDirectories(Paths.get(workDirectory.getAbsolutePath(), file).getParent());
+                            Files.copy(Paths.get(sourceDirectory.getAbsolutePath(), file), Paths.get(workDirectory.getAbsolutePath(),
+                                    file), StandardCopyOption.REPLACE_EXISTING);
+                        } else {
+                            Files.createDirectories(Paths.get(workDirectory.getAbsolutePath(), file).getParent());
+                            new FileOutputStream(new File(workDirectory, file)).close();
+                        }
+                    }
+                } catch (IOException e) {
+                    getLog().error("Unable to analyse project files.", e);
+                }
+            });
+        }
+        Map<String, String> mappings = new HashMap<>(DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING);
+        if (scriptEngineMappings != null) {
+            mappings.putAll(scriptEngineMappings);
+        }
+        scriptEngineMappings = mappings;
+        if (searchPaths == null || searchPaths.isEmpty()) {
+            searchPaths = DEFAULT_SEARCH_PATHS;
+        }
+        DirectoryScanner scanner = new DirectoryScanner();
+        scanner.setBasedir(workDirectory);
+        scanner.setIncludes("**");
+        scanner.setExcludes("**/*.class");
+        scanner.addDefaultExcludes();
+        scanner.scan();
+        Capabilities folderCapabilities = generateCapabilities(workDirectory.getAbsolutePath(), scanner);
+        providedResourceTypeCapabilities.addAll(folderCapabilities.getProvidedResourceTypeCapabilities());
+        providedScriptCapabilities.addAll(folderCapabilities.getProvidedScriptCapabilities());
+        requiredResourceTypeCapabilities.addAll(folderCapabilities.getRequiredResourceTypeCapabilities());
         capabilities = new Capabilities(providedResourceTypeCapabilities, providedScriptCapabilities, requiredResourceTypeCapabilities);
         String providedCapabilitiesDefinition = getProvidedCapabilitiesString(capabilities);
         String requiredCapabilitiesDefinition = getRequiredCapabilitiesString(capabilities);

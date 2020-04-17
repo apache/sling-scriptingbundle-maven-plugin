@@ -38,6 +38,7 @@
                     </searchPaths>
                     <scriptEngineMappings>
                         <html>thymeleaf</html>
+                        <js>rhino</js>
                     </scriptEngineMappings>
                 </configuration>
                 <executions>
