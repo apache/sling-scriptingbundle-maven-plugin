@@ -66,9 +66,14 @@ class Script {
         String scriptExtension = parts[parts.length - 1];
         String requestExtension = null;
         String requestMethod = null;
-        if (parts.length == 2 && MetadataMojo.METHODS.contains(name)) {
-            requestMethod = name;
-            name = null;
+        if (parts.length == 2) {
+            if (MetadataMojo.METHODS.contains(name)) {
+                requestMethod = name;
+                name = null;
+            } else if (name.equalsIgnoreCase("html")) {
+                requestExtension = name;
+                name = null;
+            }
         }
         if (parts.length == 3) {
             String middle = parts[1];

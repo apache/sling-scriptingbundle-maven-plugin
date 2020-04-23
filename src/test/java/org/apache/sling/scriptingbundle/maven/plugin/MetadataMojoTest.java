@@ -131,7 +131,8 @@ public class MetadataMojoTest {
         Map<String, String> scriptEngineMappings =  mojoProject.mojo.getScriptEngineMappings();
         Set<ProvidedResourceTypeCapability> pExpected = new HashSet<>(Arrays.asList(
                 ProvidedResourceTypeCapability.builder().withResourceType("libs/sling/test").withScriptEngine("thymeleaf").withScriptExtension("html").build(),
-                ProvidedResourceTypeCapability.builder().withResourceType("libs/sling/test").withScriptEngine("rhino").withScriptExtension("js").withSelectors(new HashSet<>(Arrays.asList("merged"))).build()
+                ProvidedResourceTypeCapability.builder().withResourceType("libs/sling/test").withScriptEngine("rhino").withScriptExtension("js").withSelectors(new HashSet<>(Arrays.asList("merged"))).build(),
+                ProvidedResourceTypeCapability.builder().withResourceType("libs/sling/test2").withScriptEngine("jsp").withScriptExtension("jsp").withRequestExtension("html").build()
         ));
         Set<ProvidedScriptCapability> expectedScriptCapabilities = new HashSet<>(Arrays.asList(
                 ProvidedScriptCapability.builder(scriptEngineMappings).withPath("/libs/sling/commons/template.html").build(),
