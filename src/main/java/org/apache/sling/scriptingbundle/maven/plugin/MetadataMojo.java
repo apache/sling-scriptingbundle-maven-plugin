@@ -74,6 +74,48 @@ public class MetadataMojo extends AbstractMojo {
     private Set<String> sourceDirectories;
 
     /**
+     * Allows defining a list of included files and folders or patterns to filter which files should be included in the analysis for
+     * generating capabilities. By default all files are included.
+     *
+     * @since 0.2.0
+     */
+    @Parameter(property = "scriptingbundle.includes", defaultValue = "**")
+    private String[] includes;
+
+    /**
+     * Allows defining a list of excluded files and folders or patterns to filter which files should be excluded in the analysis for
+     * generating capabilities.
+     * <p>
+     * The following list provides the default excluded files and patterns:
+     * <dl>
+     * <dt>
+     *     Miscellaneous typical temporary files
+     * </dt>
+     * <dd>
+     *     **&#47;*~, **&#47;#*#, **&#47;.#*, **&#47;%*%, **&#47;._*
+     * </dd>
+     * <dt>
+     *     CVS
+     * </dt>
+     * <dd>**&#47;CVS, **&#47;CVS/**, **&#47;.cvsignore</dd>
+     * <dt>Subversion</dt>
+     * <dd>**&#47;.svn, **&#47;.svn/**</dd>
+     * <dt>Bazaar</dt>
+     * <dd>**&#47;.bzr, **&#47;.bzr/**</dd>
+     * <dt>Mac</dt>
+     * <dd>**&#47;.DS_Store</dd>
+     * <dt>Mercurial</dt>
+     * <dd>**&#47;.hg, **&#47;.hg/**</dd>
+     * <dt>git</dt>
+     * <dd>**&#47;.git, **&#47;.git/**</dd>
+     * </dl>
+     *
+     * @since 0.2.0
+     */
+    @Parameter(property = "scriptingbundle.excludes")
+    private String[] excludes;
+
+    /**
      * Allows overriding the default extension to script engine mapping, in order to correctly generate the
      * {@code sling.resourceType;scriptEngine} {@code Provide-Capability} attribute value. When configuring this mapping, please make
      * sure to use the script extension as the key and one of the Script Engine's name (obtained from
@@ -146,6 +188,28 @@ public class MetadataMojo extends AbstractMojo {
     static final Map<String, String> DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING;
     static final Set<String> DEFAULT_SEARCH_PATHS;
     static final Set<String> DEFAULT_SOURCE_DIRECTORIES;
+    static final String[] DEFAULT_EXCLUDES = {
+            // Miscellaneous typical temporary files
+            "**/*~", "**/#*#", "**/.#*", "**/%*%", "**/._*",
+
+            // CVS
+            "**/CVS", "**/CVS/**", "**/.cvsignore",
+
+            // Subversion
+            "**/.svn", "**/.svn/**",
+
+            // Bazaar
+            "**/.bzr", "**/.bzr/**",
+
+            // Mac
+            "**/.DS_Store",
+
+            // Mercurial
+            "**/.hg", "**/.hg/**",
+
+            // git
+            "**/.git", "**/.git/**",
+    };
 
     static {
         DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING = new HashMap<>();
@@ -188,12 +252,7 @@ public class MetadataMojo extends AbstractMojo {
                 }
                 return sdFile;
             }).filter(sourceDirectory -> sourceDirectory.exists() && sourceDirectory.isDirectory()).forEach(sourceDirectory -> {
-                DirectoryScanner scanner = new DirectoryScanner();
-                scanner.setBasedir(sourceDirectory);
-                scanner.setIncludes("**");
-                scanner.setExcludes("**/*.class");
-                scanner.addDefaultExcludes();
-                scanner.scan();
+                DirectoryScanner scanner = getDirectoryScanner(sourceDirectory);
                 try {
                     for (String file : scanner.getIncludedFiles()) {
                         String fileName = FilenameUtils.getName(file);
@@ -219,12 +278,7 @@ public class MetadataMojo extends AbstractMojo {
         if (searchPaths == null || searchPaths.isEmpty()) {
             searchPaths = DEFAULT_SEARCH_PATHS;
         }
-        DirectoryScanner scanner = new DirectoryScanner();
-        scanner.setBasedir(workDirectory);
-        scanner.setIncludes("**");
-        scanner.setExcludes("**/*.class");
-        scanner.addDefaultExcludes();
-        scanner.scan();
+        DirectoryScanner scanner = getDirectoryScanner(workDirectory);
         Capabilities folderCapabilities = generateCapabilities(workDirectory.getAbsolutePath(), scanner);
         providedResourceTypeCapabilities.addAll(folderCapabilities.getProvidedResourceTypeCapabilities());
         providedScriptCapabilities.addAll(folderCapabilities.getProvidedScriptCapabilities());
@@ -239,6 +293,24 @@ public class MetadataMojo extends AbstractMojo {
     }
 
     @NotNull
+    private DirectoryScanner getDirectoryScanner(@NotNull File directory) {
+        DirectoryScanner scanner = new DirectoryScanner();
+        scanner.setBasedir(directory);
+        if (includes == null || includes.length == 0) {
+            scanner.setIncludes("**");
+        } else {
+            scanner.setIncludes(includes);
+        }
+        if (excludes == null || excludes.length == 0) {
+            scanner.setExcludes(DEFAULT_EXCLUDES);
+        } else {
+            scanner.setExcludes(excludes);
+        }
+        scanner.scan();
+        return scanner;
+    }
+
+    @NotNull
     private Capabilities generateCapabilities(@NotNull String root, @NotNull DirectoryScanner scanner) {
         Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities = new LinkedHashSet<>();
         Set<ProvidedScriptCapability> providedScriptCapabilities = new LinkedHashSet<>();
@@ -246,7 +318,11 @@ public class MetadataMojo extends AbstractMojo {
         FileProcessor fileProcessor = new FileProcessor(getLog(), searchPaths, scriptEngineMappings);
         ResourceTypeFolderAnalyser resourceTypeFolderAnalyser = new ResourceTypeFolderAnalyser(getLog(), Paths.get(root), fileProcessor);
         PathOnlyScriptAnalyser pathOnlyScriptAnalyser = new PathOnlyScriptAnalyser(getLog(), Paths.get(root), scriptEngineMappings, fileProcessor);
-        Arrays.stream(scanner.getIncludedDirectories()).map(dir -> Paths.get(root, dir)).forEach(folder -> {
+        Set<String> includedDirectories = new HashSet<>();
+        for (String file : scanner.getIncludedFiles()) {
+            includedDirectories.add(FilenameUtils.getFullPath(file));
+        }
+        includedDirectories.stream().map(dir -> Paths.get(root, dir)).forEach(folder -> {
             Capabilities resourceTypeCapabilities = resourceTypeFolderAnalyser.getCapabilities(folder);
             providedResourceTypeCapabilities.addAll(resourceTypeCapabilities.getProvidedResourceTypeCapabilities());
             requiredResourceTypeCapabilities.addAll(resourceTypeCapabilities.getRequiredResourceTypeCapabilities());
