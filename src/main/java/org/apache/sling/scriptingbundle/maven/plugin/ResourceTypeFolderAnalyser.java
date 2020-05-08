@@ -29,10 +29,10 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.maven.plugin.logging.Log;
-import org.apache.sling.scripting.bundle.tracker.ResourceType;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.Capabilities;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedResourceTypeCapability;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.RequiredResourceTypeCapability;
+import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
 import org.jetbrains.annotations.NotNull;
 
 

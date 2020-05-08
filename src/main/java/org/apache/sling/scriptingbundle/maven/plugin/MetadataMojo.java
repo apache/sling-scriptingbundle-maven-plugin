@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -49,6 +50,7 @@ import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedScriptCa
 import org.apache.sling.scriptingbundle.maven.plugin.capability.RequiredResourceTypeCapability;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Constants;
+import org.osgi.framework.Version;
 import org.osgi.framework.VersionRange;
 
 /**
@@ -236,9 +238,6 @@ public class MetadataMojo extends AbstractMojo {
     private Capabilities capabilities;
 
     public void execute() {
-        Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities = new HashSet<>();
-        Set<ProvidedScriptCapability> providedScriptCapabilities = new HashSet<>();
-        Set<RequiredResourceTypeCapability> requiredResourceTypeCapabilities = new HashSet<>();
         capabilities = new Capabilities(new HashSet<>(), new HashSet<>(), new HashSet<>());
         if (sourceDirectories.isEmpty()) {
             sourceDirectories = new HashSet<>(DEFAULT_SOURCE_DIRECTORIES);
@@ -279,17 +278,16 @@ public class MetadataMojo extends AbstractMojo {
             searchPaths = DEFAULT_SEARCH_PATHS;
         }
         DirectoryScanner scanner = getDirectoryScanner(workDirectory);
-        Capabilities folderCapabilities = generateCapabilities(workDirectory.getAbsolutePath(), scanner);
-        providedResourceTypeCapabilities.addAll(folderCapabilities.getProvidedResourceTypeCapabilities());
-        providedScriptCapabilities.addAll(folderCapabilities.getProvidedScriptCapabilities());
-        requiredResourceTypeCapabilities.addAll(folderCapabilities.getRequiredResourceTypeCapabilities());
-        capabilities = new Capabilities(providedResourceTypeCapabilities, providedScriptCapabilities, requiredResourceTypeCapabilities);
+        capabilities = generateCapabilities(workDirectory.getAbsolutePath(), scanner);
         String providedCapabilitiesDefinition = getProvidedCapabilitiesString(capabilities);
         String requiredCapabilitiesDefinition = getRequiredCapabilitiesString(capabilities);
+        String unresolvedRequiredCapabilitiesDefinition = getUnresolvedRequiredCapabilitiesString(capabilities);
         project.getProperties().put(this.getClass().getPackage().getName() + "." + Constants.PROVIDE_CAPABILITY,
                 providedCapabilitiesDefinition);
         project.getProperties().put(this.getClass().getPackage().getName() + "." + Constants.REQUIRE_CAPABILITY,
                 requiredCapabilitiesDefinition);
+        project.getProperties().put(this.getClass().getPackage().getName() + "." + "Unresolved-" + Constants.REQUIRE_CAPABILITY,
+                unresolvedRequiredCapabilitiesDefinition);
     }
 
     @NotNull
@@ -422,7 +420,30 @@ public class MetadataMojo extends AbstractMojo {
             } else {
                 builder.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType()).append(")");
             }
-            builder.append(")\"");
+            if (pcIndex < pcNum - 1) {
+                builder.append(",");
+            }
+            pcIndex++;
+        }
+        return builder.toString();
+    }
+
+    @NotNull
+    private String getUnresolvedRequiredCapabilitiesString(Capabilities capabilities) {
+        StringBuilder builder = new StringBuilder();
+        int pcNum = capabilities.getUnresolvedRequiredResourceTypeCapabilities().size();
+        int pcIndex = 0;
+        for (RequiredResourceTypeCapability capability : capabilities.getUnresolvedRequiredResourceTypeCapabilities()) {
+            builder.append(CAPABILITY_NS).append(";");
+            builder.append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType());
+            VersionRange versionRange = capability.getVersionRange();
+            if (versionRange != null) {
+                Version left = versionRange.getLeft();
+                if (versionRange.getLeftType() == VersionRange.LEFT_OPEN) {
+                    left = new Version(left.getMajor(), left.getMinor(), left.getMicro() + 1);
+                }
+                builder.append(";").append(CAPABILITY_VERSION_AT).append("=").append(left);
+            }
             if (pcIndex < pcNum - 1) {
                 builder.append(",");
             }

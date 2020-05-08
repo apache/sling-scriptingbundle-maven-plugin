@@ -148,11 +148,14 @@ public class MetadataMojoTest {
                     RequiredResourceTypeCapability.builder().withResourceType("org/apache/sling/bar")
                             .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
             ));
-            Set<ProvidedScriptCapability> providedScriptCapabilities = new HashSet<>(Arrays.asList(
+            Set<ProvidedScriptCapability> sExpected = new HashSet<>(Arrays.asList(
                     ProvidedScriptCapability.builder(mojoProject.mojo.getScriptEngineMappings())
                             .withPath("/org.apache.sling.wrongbar/wrongbar.has.too.many.selectors.html").build()
             ));
-            verifyCapabilities(capabilities, pExpected, rExpected, providedScriptCapabilities);
+            Set<RequiredResourceTypeCapability> urExpected = new HashSet<>(Arrays.asList(
+                    RequiredResourceTypeCapability.builder().withResourceType("sling/default").withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
+            ));
+            verifyCapabilities(capabilities, pExpected, rExpected, sExpected, urExpected);
         } finally {
             FileUtils.forceDeleteOnExit(new File(mojoProject.project.getBuild().getDirectory()));
         }
@@ -181,7 +184,11 @@ public class MetadataMojoTest {
                     RequiredResourceTypeCapability.builder().withResourceType("sling/scripting/warpDrive")
                             .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
             ));
-            verifyCapabilities(capabilities, pExpected, expectedRequired, expectedScriptCapabilities);
+            Set<RequiredResourceTypeCapability> expectedUnresolvedRequired = new HashSet<>(Arrays.asList(
+                    RequiredResourceTypeCapability.builder().withResourceType("sling/scripting/warpDrive")
+                            .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
+            ));
+            verifyCapabilities(capabilities, pExpected, expectedRequired, expectedScriptCapabilities, expectedUnresolvedRequired);
         } finally {
             FileUtils.forceDeleteOnExit(new File(mojoProject.project.getBuild().getDirectory()));
         }
@@ -200,14 +207,15 @@ public class MetadataMojoTest {
                             .withSelectors(new HashSet<>(Arrays.asList("selector"))).withScriptEngine("htl").withScriptExtension("html")
                             .build()
             ));
-            verifyCapabilities(capabilities, pExpected, Collections.emptySet(), Collections.emptySet());
+            verifyCapabilities(capabilities, pExpected, Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
         } finally {
             FileUtils.forceDeleteOnExit(new File(mojoProject.project.getBuild().getDirectory()));
         }
     }
 
     private void verifyCapabilities(Capabilities capabilities, Set<ProvidedResourceTypeCapability> pExpected,
-                                    Set<RequiredResourceTypeCapability> rExpected, Set<ProvidedScriptCapability> sExpected) {
+                                    Set<RequiredResourceTypeCapability> rExpected, Set<ProvidedScriptCapability> sExpected,
+                                    Set<RequiredResourceTypeCapability> urExpected) {
         Set<ProvidedResourceTypeCapability> provided = new HashSet<>(capabilities.getProvidedResourceTypeCapabilities());
         StringBuilder missingProvided = new StringBuilder();
         for (ProvidedResourceTypeCapability capability : pExpected) {
@@ -265,6 +273,26 @@ public class MetadataMojoTest {
         }
         if (extraProvidedScripts.length() > 0) {
             fail(extraProvidedScripts.toString());
+        }
+
+        Set<RequiredResourceTypeCapability> unresolvedRequired = new HashSet<>(capabilities.getUnresolvedRequiredResourceTypeCapabilities());
+        assertEquals(urExpected.size(), unresolvedRequired.size());
+        StringBuilder missingUnresolvedRequired = new StringBuilder();
+        for (RequiredResourceTypeCapability capability : urExpected) {
+            boolean removed = unresolvedRequired.remove(capability);
+            if (!removed) {
+                missingUnresolvedRequired.append("Missing unresolved required capability: ").append(capability.toString()).append(System.lineSeparator());
+            }
+        }
+        if (missingUnresolvedRequired.length() > 0) {
+            fail(missingUnresolvedRequired.toString());
+        }
+        StringBuilder extraUnresolvedRequired = new StringBuilder();
+        for (RequiredResourceTypeCapability capability : unresolvedRequired) {
+            extraUnresolvedRequired.append("Extra unresolved required capability: ").append(capability.toString()).append(System.lineSeparator());
+        }
+        if (extraUnresolvedRequired.length() > 0) {
+            fail(extraUnresolvedRequired.toString());
         }
     }
 

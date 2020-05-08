@@ -19,11 +19,9 @@
 package org.apache.sling.scriptingbundle.maven.plugin.capability;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedResourceTypeCapability;
-import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedScriptCapability;
-import org.apache.sling.scriptingbundle.maven.plugin.capability.RequiredResourceTypeCapability;
 import org.jetbrains.annotations.NotNull;
 
 public class Capabilities {
@@ -31,6 +29,7 @@ public class Capabilities {
     private final Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities;
     private final Set<ProvidedScriptCapability> providedScriptCapabilities;
     private final Set<RequiredResourceTypeCapability> requiredResourceTypeCapabilities;
+    private final Set<RequiredResourceTypeCapability> unresolvedRequiredResourceTypeCapabilities;
     public static final Capabilities EMPTY = new Capabilities(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
     public Capabilities(
@@ -40,6 +39,9 @@ public class Capabilities {
         this.providedResourceTypeCapabilities = providedResourceTypeCapabilities;
         this.providedScriptCapabilities = providedScriptCapabilities;
         this.requiredResourceTypeCapabilities = requiredResourceTypeCapabilities;
+        unresolvedRequiredResourceTypeCapabilities = new HashSet<>(requiredResourceTypeCapabilities);
+        providedResourceTypeCapabilities.forEach(providedResourceTypeCapability -> unresolvedRequiredResourceTypeCapabilities
+                .removeIf(requiredResourceTypeCapability -> requiredResourceTypeCapability.isSatisfied(providedResourceTypeCapability)));
     }
 
     public @NotNull Set<ProvidedResourceTypeCapability> getProvidedResourceTypeCapabilities() {
@@ -47,10 +49,14 @@ public class Capabilities {
     }
 
     public @NotNull Set<ProvidedScriptCapability> getProvidedScriptCapabilities() {
-        return providedScriptCapabilities;
+        return Collections.unmodifiableSet(providedScriptCapabilities);
     }
 
     public @NotNull Set<RequiredResourceTypeCapability> getRequiredResourceTypeCapabilities() {
         return Collections.unmodifiableSet(requiredResourceTypeCapabilities);
+    }
+
+    public @NotNull Set<RequiredResourceTypeCapability> getUnresolvedRequiredResourceTypeCapabilities() {
+        return Collections.unmodifiableSet(unresolvedRequiredResourceTypeCapabilities);
     }
 }

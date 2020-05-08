@@ -19,10 +19,12 @@
 package org.apache.sling.scriptingbundle.maven.plugin.capability;
 
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.osgi.framework.Version;
 import org.osgi.framework.VersionRange;
 
 public class RequiredResourceTypeCapability {
@@ -47,6 +49,25 @@ public class RequiredResourceTypeCapability {
     @Nullable
     public VersionRange getVersionRange() {
         return versionRange;
+    }
+    
+    public boolean isSatisfied(@NotNull ProvidedResourceTypeCapability providedResourceTypeCapability) {
+        Set<String> providedSelectors = providedResourceTypeCapability.getSelectors();
+        if (providedSelectors.isEmpty()) {
+            for (String providedResourceType : providedResourceTypeCapability.getResourceTypes()) {
+                if (resourceType.equals(providedResourceType)) {
+                    if (versionRange == null) {
+                        return true;
+                    } else {
+                        String providedVersion = providedResourceTypeCapability.getVersion();
+                        if (StringUtils.isNotEmpty(providedVersion)) {
+                            return versionRange.includes(Version.parseVersion(providedVersion));
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override
