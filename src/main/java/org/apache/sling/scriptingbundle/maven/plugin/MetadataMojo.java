@@ -418,7 +418,7 @@ public class MetadataMojo extends AbstractMojo {
                 builder.append("(&").append(versionRange.toFilterString("version")).append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append(
                         "=").append(capability.getResourceType()).append("))");
             } else {
-                builder.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType()).append(")");
+                builder.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType()).append("))");
             }
             if (pcIndex < pcNum - 1) {
                 builder.append(",");
