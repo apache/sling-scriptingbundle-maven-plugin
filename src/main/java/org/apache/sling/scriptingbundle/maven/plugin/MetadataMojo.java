@@ -416,7 +416,7 @@ public class MetadataMojo extends AbstractMojo {
             VersionRange versionRange = capability.getVersionRange();
             if (versionRange != null) {
                 builder.append("(&").append(versionRange.toFilterString("version")).append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append(
-                        "=").append(capability.getResourceType()).append("))\"");
+                        "=").append(capability.getResourceType()).append(")))\"");
             } else {
                 builder.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType()).append("))\"");
             }
