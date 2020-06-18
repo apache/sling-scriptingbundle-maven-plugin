@@ -60,7 +60,7 @@ import org.osgi.framework.VersionRange;
  * corresponding OSGi bundle headers for bundles providing scripts executable by a {@link javax.script.ScriptEngine}.
  */
 @Mojo(name = "metadata",
-      defaultPhase = LifecyclePhase.PACKAGE)
+      defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
 public class MetadataMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)

@@ -1,0 +1,94 @@
+#set($h1 = '#')
+#set($h2 = '##')
+#set($h3 = '###')
+#set($h4 = '####')
+
+
+$h2 Usage
+
+The Scripting Bundle Maven Plugin will look for scripts in two project directories:
+
+  1. `src/main/scripts` - this folder will contain scripts that will be pre-compiled
+  2. `src/main/resources/javax.script` - this folder will contain scripts that will be embedded as is
+
+The structure in these source directories should then follow the normal way of structuring scripts in an Apache Sling application. For more
+details, check the [URL to Script Resolution](https://sling.apache.org/documentation/the-sling-engine/url-to-script-resolution.html#script-locations)
+page. In addition to the normal way of structuring scripts in the file tree, the plugin provides some additional features:
+
+  1. Resource Type Versioning<br/>
+     This works by putting the scripts in a folder that follows this simple naming convention: `<resourceType>/<version>/`. The `<version>`
+     should be a valid semantic version (e.g. `1.0.0`)
+
+  2. Defining explicit extends relationships (similar to the `sling:resourceSuperType` property)<br/>
+     An `extends` file in the resource type folder (versioned or not) allows defining this explicit relationship. This file must contain a
+     single line with the `resourceType` used for the `extends` capability attribute followed by a `;version=<version-range>`; in this
+     case, the plugin will set the `extends` attribute to the given `resourceType` and generate a `Require-Capability` for that
+     `resourceType` with the given version range.
+
+  3. Defining an explicit requirement, without an inheritance relationship (e.g. delegation to another resource type)<br/>
+     A `requires` file (assuming the same conventions and syntax as for the `extends` file) will generate a `Require-Capability` for each
+     line based on the given `resourceType` and version range.
+
+$h3 Defining scripts
+As an example, let's assume the following layout:
+```
+src/main/resources/javax.script/
+    org.foo/1.0.0
+        foo.POST.html
+```
+
+This will generate following `Provide-Capability`:
+
+```
+sling.servlet;
+    sling.servlet.resourceTypes:List<String>="org.foo";
+    sling.servlet.methods:List<String>=POST;
+    version:Version="1.0.0"
+```
+
+For more complex examples head over to https://github.com/apache/sling-org-apache-sling-scripting-bundle-tracker-it/tree/master/examples.
+
+$h3 So how do I use the plugin?
+The plugin doesn't currently integrate with the `maven-bundle-plugin`, nor the `bnd-maven-plugin`. However, the generated
+`Require-Capability` and  `Provide-Capability` headers values are simply made available via properties:
+
+```
+${org.apache.sling.scriptingbundle.maven.plugin.Require-Capability}
+${org.apache.sling.scriptingbundle.maven.plugin.Require-Capability}
+```
+
+That makes it reasonable straightforward to use the plugin by just adding it into your build in the
+`prepare-package` phase and use the two properties in the manifest writing instructions of another plugin like
+the `maven-bundle-plugin`:
+
+```
+<plugin>
+    <groupId>${project.groupId}</groupId>
+    <artifactId>${project.artifactId}</artifactId>
+    <version>${project.version}</version>
+    <executions>
+        <execution>
+            <phase>prepare-package</phase>
+            <goals>
+                <goal>metadata</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+<plugin>
+    <groupId>org.apache.felix</groupId>
+    <artifactId>maven-bundle-plugin</artifactId>
+    <extensions>true</extensions>
+    <configuration>
+        <instructions>
+            <Provide-Capability>
+                ${org.apache.sling.scriptingbundle.maven.plugin.Provide-Capability}
+            </Provide-Capability>
+            <Require-Capability>
+                osgi.extender;filter:="(&amp;(osgi.extender=sling.scripting)(version>=1.0.0)(!(version>=2.0.0)))",
+                ${org.apache.sling.scriptingbundle.maven.plugin.Require-Capability}
+            </Require-Capability>
+        </instructions>
+    </configuration>
+</plugin>
+```

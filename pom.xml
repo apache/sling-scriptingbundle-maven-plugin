@@ -31,16 +31,28 @@
     <version>0.1.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
-        <scm>
-            <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</connection>
-            <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</developerConnection>
-            <url>https://gitbox.apache.org/repos/asf?p=sling-scriptingbundle-maven-plugin.git</url>
-            <tag>HEAD</tag>
-        </scm>
+    <name>Apache Sling Scripting Bundle Maven Plugin</name>
+    <description>The Apache Sling Scripting Bundle Maven Plugin provides support for packing server-side scripts as bundle
+        entries (directly embedded or compiled as Java classes). When executed, the plugin will define two system properties
+        which can be used to populate the Provide-Capability and Require-Capability bundle headers.</description>
+    <url>https://sling.apache.org/components/scriptingbundle-maven-plugin/</url>
+
+    <scm>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</developerConnection>
+        <url>https://gitbox.apache.org/repos/asf?p=sling-scriptingbundle-maven-plugin.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <prerequisites>
+        <maven>${maven.version}</maven>
+    </prerequisites>
 
     <properties>
         <sling.java.version>8</sling.java.version>
         <maven.version>3.6.0</maven.version>
+        <site.jira.version.id>12344664,12347157</site.jira.version.id>
+        <maven.site.path>${project.artifactId}-archives/${project.artifactId}-LATEST</maven.site.path>
     </properties>
 
     <build>
@@ -222,4 +234,24 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changes-plugin</artifactId>
+                <configuration>
+                    <useJql>true</useJql>
+                    <sortColumnNames>resolutiondate DESC</sortColumnNames>
+                    <columnNames>Type,Key,Summary,Fix Version</columnNames>
+                    <resolutionIds>Fixed</resolutionIds>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
+
 </project>
