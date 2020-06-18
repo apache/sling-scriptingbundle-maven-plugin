@@ -87,8 +87,7 @@ public class MetadataMojo extends AbstractMojo {
     /**
      * Allows defining a list of excluded files and folders or patterns to filter which files should be excluded in the analysis for
      * generating capabilities.
-     * <p>
-     * The following list provides the default excluded files and patterns:
+     * <p>The following list provides the default excluded files and patterns:
      * <dl>
      * <dt>
      *     Miscellaneous typical temporary files
@@ -169,6 +168,8 @@ public class MetadataMojo extends AbstractMojo {
      * <pre>
      *     org/apache/sling/example
      * </pre>
+     *
+     * @since 0.2.0
      */
     @Parameter(property = "scriptingbundle.searchPaths")
     private Set<String> searchPaths;

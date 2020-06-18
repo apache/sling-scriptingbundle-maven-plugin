@@ -29,6 +29,10 @@ page. In addition to the normal way of structuring scripts in the file tree, the
      A `requires` file (assuming the same conventions and syntax as for the `extends` file) will generate a `Require-Capability` for each
      line based on the given `resourceType` and version range.
 
+  4. The Resource Type can have the form of a path or of a Java package name (e.g. `com.mydomain.components.image`). When the resource type
+     is defined as a package name, the resource type label will be the last subpackage (i.e. for `com.mydomain.components.image`, the
+     resource type label will be `image`).
+
 $h3 Defining scripts
 As an example, let's assume the following layout:
 ```
