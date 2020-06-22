@@ -59,7 +59,7 @@ public class FileProcessor {
                 String extend = extendResources.get(0);
                 if (StringUtils.isNotEmpty(extend)) {
                     String[] extendParts = extend.split(";");
-                    String extendedResourceType = extendParts[0];
+                    String extendedResourceType = FilenameUtils.normalize(extendParts[0], true);
                     String extendedResourceTypeVersion = extendParts.length > 1 ? extendParts[1] : null;
                     Set<String> searchPathResourceTypes = processSearchPathResourceTypes(resourceType);
                     Optional<ProvidedResourceTypeCapability> rootCapability = providedCapabilities.stream().filter(capability ->
@@ -100,7 +100,7 @@ public class FileProcessor {
             for (String requiredResourceType : requiredResourceTypes) {
                 if (StringUtils.isNotEmpty(requiredResourceType)) {
                     String[] requireParts = requiredResourceType.split(";");
-                    String resourceType = requireParts[0];
+                    String resourceType = FilenameUtils.normalize(requireParts[0], true);
                     String version = requireParts.length > 1 ? requireParts[1] : null;
                     RequiredResourceTypeCapability.Builder requiredBuilder =
                             RequiredResourceTypeCapability.builder().withResourceType(resourceType);

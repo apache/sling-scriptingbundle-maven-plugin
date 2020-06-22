@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.Capabilities;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedResourceTypeCapability;
@@ -57,7 +58,7 @@ class ResourceTypeFolderAnalyser {
             try (DirectoryStream<Path> resourceTypeDirectoryStream = Files
                     .newDirectoryStream(scriptsDirectory.resolve(resourceTypeDirectory))) {
                 Path relativeResourceTypeDirectory = scriptsDirectory.relativize(resourceTypeDirectory);
-                final ResourceType resourceType = ResourceType.parseResourceType(relativeResourceTypeDirectory.toString());
+                final ResourceType resourceType = ResourceType.parseResourceType(FilenameUtils.normalize(relativeResourceTypeDirectory.toString(), true));
                 resourceTypeDirectoryStream.forEach(entry -> {
                     if (Files.isRegularFile(entry)) {
                         Path file = entry.getFileName();
