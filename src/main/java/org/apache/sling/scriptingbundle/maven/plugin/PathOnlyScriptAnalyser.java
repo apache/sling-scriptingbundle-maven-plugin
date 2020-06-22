@@ -68,7 +68,7 @@ public class PathOnlyScriptAnalyser {
                         String name = fileName.toString();
                         int dotLastIndex = name.lastIndexOf('.');
                         if (dotLastIndex > -1 && dotLastIndex != name.length() - 1) {
-                            String scriptPath = "/" + scriptsDirectory.relativize(file).toString();
+                            String scriptPath = FilenameUtils.normalize("/" + scriptsDirectory.relativize(file).toString(), true);
                             ProvidedScriptCapability providedScriptCapability =
                                     ProvidedScriptCapability.builder(scriptEngineMappings).withPath(scriptPath).build();
                             Path requires = parent.resolve(MetadataMojo.REQUIRES_FILE);
