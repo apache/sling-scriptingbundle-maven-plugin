@@ -47,7 +47,7 @@
     <properties>
         <sling.java.version>8</sling.java.version>
         <maven.version>3.6.0</maven.version>
-        <site.jira.version.id>12344664,12347157</site.jira.version.id>
+        <site.jira.version.id>12344664,12347157,12348422,12348558</site.jira.version.id>
         <maven.site.path>${project.artifactId}-archives/${project.artifactId}-LATEST</maven.site.path>
     </properties>
 
