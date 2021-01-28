@@ -32,9 +32,9 @@ import java.util.Set;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedResourceTypeCapability;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.RequiredResourceTypeCapability;
+import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.VersionRange;
 
