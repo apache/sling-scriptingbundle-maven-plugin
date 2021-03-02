@@ -24,16 +24,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.sling.scripting.spi.bundle.ResourceType;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.Capabilities;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.ProvidedResourceTypeCapability;
 import org.apache.sling.scriptingbundle.maven.plugin.capability.RequiredResourceTypeCapability;
-import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -58,7 +57,8 @@ class ResourceTypeFolderAnalyser {
             try (DirectoryStream<Path> resourceTypeDirectoryStream = Files
                     .newDirectoryStream(scriptsDirectory.resolve(resourceTypeDirectory))) {
                 Path relativeResourceTypeDirectory = scriptsDirectory.relativize(resourceTypeDirectory);
-                final ResourceType resourceType = ResourceType.parseResourceType(FilenameUtils.normalize(relativeResourceTypeDirectory.toString(), true));
+                final ResourceType
+                        resourceType = ResourceType.parseResourceType(FilenameUtils.normalize(relativeResourceTypeDirectory.toString(), true));
                 resourceTypeDirectoryStream.forEach(entry -> {
                     if (Files.isRegularFile(entry)) {
                         Path file = entry.getFileName();
