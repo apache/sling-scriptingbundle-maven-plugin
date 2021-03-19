@@ -6,7 +6,9 @@
 
 $h2 Usage
 
-The Scripting Bundle Maven Plugin will look for scripts in two project directories:
+The plugin can be used either as a regular Maven plugin or as a BND plugin.
+
+No matter which approach you choose, the plugin will by default look for scripts in two project directories:
 
   1. `src/main/scripts` - this folder will contain scripts that will be pre-compiled
   2. `src/main/resources/javax.script` - this folder will contain scripts that will be embedded as is
@@ -53,17 +55,19 @@ sling.servlet;
 For more complex examples head over to https://github.com/apache/sling-org-apache-sling-scripting-bundle-tracker-it/tree/master/examples.
 
 $h3 So how do I use the plugin?
-The plugin doesn't currently integrate with the `maven-bundle-plugin`, nor the `bnd-maven-plugin`. However, the generated
-`Require-Capability` and  `Provide-Capability` headers values are simply made available via properties:
+
+$h4 Maven Plugin
+
+When used as a Maven plugin, the generated `Require-Capability` and  `Provide-Capability` headers values are made available via
+properties:
 
 ```
 ${org.apache.sling.scriptingbundle.maven.plugin.Require-Capability}
 ${org.apache.sling.scriptingbundle.maven.plugin.Require-Capability}
 ```
 
-That makes it reasonable straightforward to use the plugin by just adding it into your build in the
-`prepare-package` phase and use the two properties in the manifest writing instructions of another plugin like
-the `maven-bundle-plugin`:
+That makes it reasonably straightforward to use the plugin by just adding it into your build and use the two properties in the manifest
+writing instructions of another plugin like the `maven-bundle-plugin`:
 
 ```
 <plugin>
@@ -96,3 +100,35 @@ the `maven-bundle-plugin`:
     </configuration>
 </plugin>
 ```
+
+The `osgi.extender` requirement is mandatory to have the bundle wired up to the Apache Sling Servlets Resolver, but this should be manually
+defined by the developers, so that their bundle is correctly wired up to whatever version of the Servlets Resolver is available on the
+destination platform.
+
+$h4 BND Plugin
+
+Starting with version `0.3.0`, the JAR can also be used to provide a BND plugin. The simplest configuration (where the defaults are used)
+would look like:
+```
+<plugin>
+    <groupId>biz.aQute.bnd</groupId>
+    <artifactId>bnd-maven-plugin</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>${project.artifactId}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+</plugin>
+```
+
+and the following instructions added to your project's `bnd.bnd` file:
+```
+Require-Capability:             osgi.extender;filter:="(&(osgi.extender=sling.scripting)(version>=1.0.0)(!(version>=2.0.0)))"
+-plugin:                        org.apache.sling.scriptingbundle.plugin.bnd.BundledScriptsScannerPlugin
+```
+
+The BND plugin supports the same configuration options as the Maven `metadata` goal, using the exact same name for its configuration
+properties. Multiple values need to be provided as a quoted comma separated values list (e.g.
+`sourceDirectories="src/main/scripts,src/main/resources/javax.script"`, `scriptEngineMappings="html:htl,js:rhino"`).

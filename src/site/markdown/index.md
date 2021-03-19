@@ -1,6 +1,7 @@
-The Apache Sling Scripting Bundle Maven Plugin provides support for generating OSGi bundles
-that provide embedded or precompiled scripts to perform server-side rendering in an Apache
-Sling application. When executed, the plugin will define two project properties
+The Apache Sling Scripting Bundle Maven Plugin helps with generating the OSGi bundle
+headers that bundles which provide embedded or precompiled scripts for server-side
+rendering in an Apache Sling application require in order to have themselves wired up to the
+Apache Sling Servlets Resolver.  When executed, the plugin will define two project properties
 (`org.apache.sling.scriptingbundle.maven.plugin.Require-Capability` and
 `org.apache.sling.scriptingbundle.maven.plugin.Provide-Capability`) which can be used to
 populate the corresponding bundle headers.
@@ -12,13 +13,6 @@ versioning and dependency support.
 
 Manually defining the `Require-Capability` and `Provide-Capability` bundle headers is error-prone and unnecessary,
 as they can be derived from the file-system layout required for scripts by the resolver (for the most part).
-
-## Goals
-The Scripting Bundle Maven Plugin has only one goal:
-
-* [scriptingbundle:metadata](metadata-mojo.html) is bound to the package phase and is used
-to generate the above mentioned project properties.
-
 
 ## Usage
 General instructions on how to use the Scripting Bundle Maven Plugin can be found on the
