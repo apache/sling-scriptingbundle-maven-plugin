@@ -26,20 +26,21 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.osgi.framework.Version;
 
 public class ProvidedResourceTypeCapability {
     private final Set<String> resourceTypes;
     private final String scriptEngine;
     private final String scriptExtension;
     private final String extendsResourceType;
-    private final String version;
+    private final Version version;
     private final String requestExtension;
     private final String requestMethod;
     private final Set<String> selectors;
 
     private ProvidedResourceTypeCapability(@NotNull Set<String> resourceTypes, @Nullable String scriptEngine,
                                            @Nullable String scriptExtension, @Nullable String extendsResourceType,
-                                           @Nullable String version, @Nullable String requestExtension, @Nullable String requestMethod,
+                                           @Nullable Version version, @Nullable String requestExtension, @Nullable String requestMethod,
                                            @NotNull Set<String> selectors) {
         this.resourceTypes = resourceTypes;
         this.scriptEngine = scriptEngine;
@@ -71,7 +72,7 @@ public class ProvidedResourceTypeCapability {
     }
 
     @Nullable
-    public String getVersion() {
+    public Version getVersion() {
         return version;
     }
 
@@ -134,7 +135,7 @@ public class ProvidedResourceTypeCapability {
         private String scriptEngine;
         private String scriptExtension;
         private String extendsResourceType;
-        private String version;
+        private Version version;
         private String requestExtension;
         private String requestMethod;
         private Set<String> selectors = Collections.emptySet();
@@ -170,7 +171,7 @@ public class ProvidedResourceTypeCapability {
             return this;
         }
 
-        public Builder withVersion(String version) {
+        public Builder withVersion(Version version) {
             this.version = version;
             return this;
         }

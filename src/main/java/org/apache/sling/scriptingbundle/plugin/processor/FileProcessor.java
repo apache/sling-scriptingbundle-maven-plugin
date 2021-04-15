@@ -31,7 +31,7 @@ import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.sling.scripting.spi.bundle.ResourceType;
+import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.scriptingbundle.plugin.capability.ProvidedResourceTypeCapability;
 import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCapability;
 import org.jetbrains.annotations.NotNull;
@@ -163,13 +163,13 @@ public class FileProcessor {
                         );
                         providedCapabilities.add(builder.build());
                     } else {
-                        log.warn(String.format("Cannot find a script engine mapping for script %s.", scriptPath.toString()));
+                        log.warn(String.format("Cannot find a script engine mapping for script %s.", scriptPath));
                     }
                 } else {
-                    log.warn(String.format("File %s does not denote a script.", scriptPath.toString()));
+                    log.warn(String.format("File %s does not denote a script.", scriptPath));
                 }
             } else {
-                log.warn(String.format("Skipping path %s since it has 0 elements.", scriptPath.toString()));
+                log.warn(String.format("Skipping path %s since it has 0 elements.", scriptPath));
             }
         }
     }
@@ -199,7 +199,7 @@ public class FileProcessor {
                 requiredBuilder.withVersionRange(VersionRange.valueOf(version.substring(version.indexOf('=') + 1)));
             }
         } catch (IllegalArgumentException ignored) {
-            log.warn(String.format("Invalid version range format %s in file %s.", version, requiresFile.toString()));
+            log.warn(String.format("Invalid version range format %s in file %s.", version, requiresFile));
         }
     }
 }

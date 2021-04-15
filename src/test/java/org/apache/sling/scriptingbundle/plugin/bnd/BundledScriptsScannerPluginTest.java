@@ -38,6 +38,7 @@ import org.apache.sling.scriptingbundle.plugin.capability.ProvidedScriptCapabili
 import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCapability;
 import org.apache.sling.scriptingbundle.plugin.bnd.BundledScriptsScannerPlugin;
 import org.junit.Test;
+import org.osgi.framework.Version;
 import org.osgi.framework.VersionRange;
 
 import aQute.bnd.osgi.Builder;
@@ -60,15 +61,15 @@ public class BundledScriptsScannerPluginTest {
             Set<ProvidedResourceTypeCapability> pExpected = new HashSet<>(Arrays.asList(
                     // org/apache/sling/bar/1.0.0
                     ProvidedResourceTypeCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl")
-                            .withScriptExtension("html").withVersion("1.0.0").build(),
+                            .withScriptExtension("html").withVersion(new Version("1.0.0")).build(),
                     ProvidedResourceTypeCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl")
-                            .withScriptExtension("html").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                            .withScriptExtension("html").withVersion(new Version("1.0.0")).withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
                             , "100"))).build(),
                     ProvidedResourceTypeCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl")
-                            .withScriptExtension("html").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                            .withScriptExtension("html").withVersion(new Version("1.0.0")).withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
                             , "200"))).build(),
                     ProvidedResourceTypeCapability.builder().withResourceType("org/apache/sling/bar").withScriptEngine("htl")
-                            .withScriptExtension("html").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                            .withScriptExtension("html").withVersion(new Version("1.0.0")).withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
                             , "depth2", "100"))).build(),
 
                     // org/apache/sling/foo
@@ -94,15 +95,15 @@ public class BundledScriptsScannerPluginTest {
 
                     // org.apache.sling.foobar/1.0.0
                     ProvidedResourceTypeCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl")
-                            .withScriptExtension("html").withVersion("1.0.0").withExtendsResourceType("org/apache/sling/bar").build(),
+                            .withScriptExtension("html").withVersion(new Version("1.0.0")).withExtendsResourceType("org/apache/sling/bar").build(),
                     ProvidedResourceTypeCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl")
-                            .withScriptExtension("html").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                            .withScriptExtension("html").withVersion(new Version("1.0.0")).withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
                             , "100"))).build(),
                     ProvidedResourceTypeCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl")
-                            .withScriptExtension("html").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                            .withScriptExtension("html").withVersion(new Version("1.0.0")).withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
                             , "200"))).build(),
                     ProvidedResourceTypeCapability.builder().withResourceType("org.apache.sling.foobar").withScriptEngine("htl")
-                            .withScriptExtension("html").withVersion("1.0.0").withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
+                            .withScriptExtension("html").withVersion(new Version("1.0.0")).withSelectors(new LinkedHashSet<>(Arrays.asList("depth1"
                             , "depth2", "100"))).build(),
 
                     // org.apache.sling.foobar

@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.sling.scripting.spi.bundle.ResourceType;
+import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.scriptingbundle.plugin.capability.Capabilities;
 import org.apache.sling.scriptingbundle.plugin.capability.ProvidedResourceTypeCapability;
 import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCapability;

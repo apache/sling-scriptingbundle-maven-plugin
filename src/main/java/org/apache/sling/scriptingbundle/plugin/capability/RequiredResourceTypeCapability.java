@@ -59,9 +59,9 @@ public class RequiredResourceTypeCapability {
                     if (versionRange == null) {
                         return true;
                     } else {
-                        String providedVersion = providedResourceTypeCapability.getVersion();
-                        if (StringUtils.isNotEmpty(providedVersion)) {
-                            return versionRange.includes(Version.parseVersion(providedVersion));
+                        Version providedVersion = providedResourceTypeCapability.getVersion();
+                        if (providedVersion != null) {
+                            return versionRange.includes(providedVersion);
                         }
                     }
                 }
