@@ -14,6 +14,8 @@ versioning and dependency support.
 Manually defining the `Require-Capability` and `Provide-Capability` bundle headers is error-prone and unnecessary,
 as they can be derived from the file-system layout required for scripts by the resolver (for the most part).
 
+Starting with version `0.3.0`, the JAR also provides a BND plugin.
+
 ## Usage
 General instructions on how to use the Scripting Bundle Maven Plugin can be found on the
 [usage](usage.html) page.

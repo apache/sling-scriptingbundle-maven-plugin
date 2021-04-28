@@ -107,7 +107,7 @@ destination platform.
 
 $h4 BND Plugin
 
-Starting with version `0.3.0`, the JAR can also be used to provide a BND plugin. The simplest configuration (where the defaults are used)
+Starting with version `0.3.0`, the JAR also provides a BND plugin. The simplest configuration (where the defaults are used)
 would look like:
 ```
 <plugin>
