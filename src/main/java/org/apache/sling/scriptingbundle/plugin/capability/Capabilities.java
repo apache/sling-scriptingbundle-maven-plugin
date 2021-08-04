@@ -143,6 +143,9 @@ public class Capabilities {
             } else {
                 builder.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType()).append("))\"");
             }
+            if (capability.isOptional()) {
+                builder.append(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE).append("=").append(aQute.bnd.osgi.Constants.OPTIONAL);
+            }
             if (pcIndex < pcNum - 1) {
                 builder.append(",");
             }

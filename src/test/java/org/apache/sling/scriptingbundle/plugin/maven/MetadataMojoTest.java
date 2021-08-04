@@ -147,7 +147,7 @@ public class MetadataMojoTest {
                             .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build(),
                     RequiredResourceTypeCapability.builder().withResourceType("org/apache/sling/bar").build(),
                     RequiredResourceTypeCapability.builder().withResourceType("org/apache/sling/bar")
-                            .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
+                            .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).withIsOptional().build()
             ));
             Set<ProvidedScriptCapability> sExpected = new HashSet<>(Arrays.asList(
                     ProvidedScriptCapability.builder(mojoProject.mojo.getScriptEngineMappings())

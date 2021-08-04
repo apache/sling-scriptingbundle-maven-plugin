@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,6 +50,8 @@ public class FileProcessor {
     private final Set<String> searchPaths;
     private final Map<String, String> scriptEngineMappings;
 
+    private static final Collection<String> EXTENDS_ALLOWED_ATTRIBUTE_NAMES = Arrays.asList(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE, aQute.bnd.osgi.Constants.VERSION_ATTRIBUTE);
+
     public FileProcessor(Logger log, Set<String> searchPaths, Map<String, String> scriptEngineMappings) {
         this.log = log;
         this.searchPaths = searchPaths;
@@ -66,9 +70,13 @@ public class FileProcessor {
                     log.error(String.format("The file '%s' must contain one clause only (not multiple ones separated by ','", extendsFile));
                 }
                 Entry<String, Attrs> extendsParameter = parameters.entrySet().iterator().next();
+                for (String attributeName : extendsParameter.getValue().keySet()) {
+                    if (!EXTENDS_ALLOWED_ATTRIBUTE_NAMES.contains(attributeName)) {
+                        log.error(String.format("Found attribute/directive %s in file %s. Only the following attributes or directives may be used in the extends file: %s", attributeName, extendsFile, String.join(",", EXTENDS_ALLOWED_ATTRIBUTE_NAMES)));
+                    }
+                }
                 String extendedResourceType = FilenameUtils.normalize(extendsParameter.getKey(), true);
-                String disableRequireString = extendsParameter.getValue().get("disableRequiresCapability");
-                boolean generateRequireCapability = !Boolean.parseBoolean(disableRequireString);
+                boolean isOptional = aQute.bnd.osgi.Constants.OPTIONAL.equals(extendsParameter.getValue().get(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE));
                 Set<String> searchPathResourceTypes = processSearchPathResourceTypes(resourceType);
                 Optional<ProvidedResourceTypeCapability> rootCapability = providedCapabilities.stream().filter(capability ->
                     capability.getResourceTypes().equals(searchPathResourceTypes) && capability.getSelectors().isEmpty() &&
@@ -90,12 +98,13 @@ public class FileProcessor {
                                     .withExtendsResourceType(extendedResourceType)
                                     .build());
                 }
-                if (generateRequireCapability) {
-                    RequiredResourceTypeCapability.Builder requiredBuilder =
-                            RequiredResourceTypeCapability.builder().withResourceType(extendedResourceType);
-                    extractVersionRange(extendsFile, requiredBuilder, extendsParameter.getValue().getVersion());
-                    requiredCapabilities.add(requiredBuilder.build());
+                RequiredResourceTypeCapability.Builder requiredBuilder =
+                        RequiredResourceTypeCapability.builder().withResourceType(extendedResourceType);
+                if (isOptional) {
+                    requiredBuilder.withIsOptional();
                 }
+                extractVersionRange(extendsFile, requiredBuilder, extendsParameter.getValue().getVersion());
+                requiredCapabilities.add(requiredBuilder.build());
             }
         } catch (IOException e) {
             log.error(String.format("Unable to read file %s.", extendsFile.toString()), e);
