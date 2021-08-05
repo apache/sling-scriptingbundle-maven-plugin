@@ -31,10 +31,12 @@ public class RequiredResourceTypeCapability {
 
     private final String resourceType;
     private final VersionRange versionRange;
+    private final boolean isOptional;
 
-    private RequiredResourceTypeCapability(@NotNull String resourceType, @Nullable VersionRange versionRange) {
+    private RequiredResourceTypeCapability(@NotNull String resourceType, @Nullable VersionRange versionRange, boolean isOptional) {
         this.resourceType = resourceType;
         this.versionRange = versionRange;
+        this.isOptional = isOptional;
     }
 
     public static Builder builder() {
@@ -50,7 +52,11 @@ public class RequiredResourceTypeCapability {
     public VersionRange getVersionRange() {
         return versionRange;
     }
-    
+
+    public boolean isOptional() {
+        return isOptional;
+    }
+
     public boolean isSatisfied(@NotNull ProvidedResourceTypeCapability providedResourceTypeCapability) {
         Set<String> providedSelectors = providedResourceTypeCapability.getSelectors();
         if (providedSelectors.isEmpty()) {
@@ -72,13 +78,13 @@ public class RequiredResourceTypeCapability {
 
     @Override
     public String toString() {
-        return String.format("%s{resourceType=%s, versionRange=%s}", this.getClass().getSimpleName(),
-                resourceType, versionRange);
+        return String.format("%s{resourceType=%s, versionRange=%s, isOptonal=%s}", this.getClass().getSimpleName(),
+                resourceType, versionRange, isOptional);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(resourceType, versionRange);
+        return Objects.hash(resourceType, versionRange, isOptional);
     }
 
     @Override
@@ -88,7 +94,7 @@ public class RequiredResourceTypeCapability {
         }
         if (obj instanceof RequiredResourceTypeCapability) {
             RequiredResourceTypeCapability other = (RequiredResourceTypeCapability) obj;
-            return Objects.equals(resourceType, other.resourceType) && Objects.equals(versionRange, other.versionRange);
+            return Objects.equals(resourceType, other.resourceType) && Objects.equals(versionRange, other.versionRange) && Objects.equals(isOptional, other.isOptional);
         }
         return false;
     }
@@ -96,9 +102,10 @@ public class RequiredResourceTypeCapability {
     public static class Builder {
         private String resourceType;
         private VersionRange versionRange;
+        private boolean isOptional;
 
         public RequiredResourceTypeCapability build() {
-            return new RequiredResourceTypeCapability(resourceType, versionRange);
+            return new RequiredResourceTypeCapability(resourceType, versionRange, isOptional);
         }
 
         public Builder withResourceType(String resourceType) {
@@ -113,6 +120,11 @@ public class RequiredResourceTypeCapability {
             this.versionRange = versionRange;
             return this;
         }
-    }
+
+        public Builder withIsOptional() {
+            this.isOptional = true;
+            return this;
+        }
+     }
 
 }

@@ -125,11 +125,11 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
         this.reporter = reporter;
     }
 
-    Capabilities getCapabilities() {
+    public Capabilities getCapabilities() {
         return capabilities;
     }
 
-    Map<String, String> getScriptEngineMappings() {
+    public Map<String, String> getScriptEngineMappings() {
         return scriptEngineMappings;
     }
 

@@ -25,7 +25,8 @@ page. In addition to the normal way of structuring scripts in the file tree, the
      An `extends` file in the resource type folder (versioned or not) allows defining this explicit relationship. This file must contain a
      single line with the `resourceType` used for the `extends` capability attribute followed by a `;version=<version-range>`; in this
      case, the plugin will set the `extends` attribute to the given `resourceType` and generate a `Require-Capability` for that
-     `resourceType` with the given version range.
+     `resourceType` with the given version range. To generate an optional capability header (when the bundled script extends from
+     a non-bundle, resource script), append `;resolution:=optional` to the line. The line must comply with the OSGI common header syntax from [OSGI Core R7 §3.2.4](http://docs.osgi.org/specification/osgi.core/7.0.0/framework.module.html#framework.common.header.syntax).
 
   3. Defining an explicit requirement, without an inheritance relationship (e.g. delegation to another resource type)<br/>
      A `requires` file (assuming the same conventions and syntax as for the `extends` file) will generate a `Require-Capability` for each

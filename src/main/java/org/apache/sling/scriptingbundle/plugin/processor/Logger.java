@@ -60,6 +60,6 @@ public interface Logger {
      * @param message the message
      * @param t       the throwable that caused this error message
      */
-    void warn(@NotNull String message, Throwable t);
+    void warn(@NotNull String message, @NotNull Throwable t);
 
 }

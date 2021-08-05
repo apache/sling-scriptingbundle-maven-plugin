@@ -22,10 +22,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 
@@ -37,11 +40,17 @@ import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCa
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.VersionRange;
 
+import aQute.bnd.header.Attrs;
+import aQute.bnd.header.OSGiHeader;
+import aQute.bnd.header.Parameters;
+
 public class FileProcessor {
 
     private final Logger log;
     private final Set<String> searchPaths;
     private final Map<String, String> scriptEngineMappings;
+
+    private static final Collection<String> EXTENDS_ALLOWED_ATTRIBUTE_NAMES = Arrays.asList(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE, aQute.bnd.osgi.Constants.VERSION_ATTRIBUTE);
 
     public FileProcessor(Logger log, Set<String> searchPaths, Map<String, String> scriptEngineMappings) {
         this.log = log;
@@ -56,36 +65,46 @@ public class FileProcessor {
             List<String> extendResources = Files.readAllLines(extendsFile, StandardCharsets.UTF_8);
             if (extendResources.size() == 1) {
                 String extend = extendResources.get(0);
-                if (StringUtils.isNotEmpty(extend)) {
-                    String[] extendParts = extend.split(";");
-                    String extendedResourceType = FilenameUtils.normalize(extendParts[0], true);
-                    String extendedResourceTypeVersion = extendParts.length > 1 ? extendParts[1] : null;
-                    Set<String> searchPathResourceTypes = processSearchPathResourceTypes(resourceType);
-                    Optional<ProvidedResourceTypeCapability> rootCapability = providedCapabilities.stream().filter(capability ->
-                        capability.getResourceTypes().equals(searchPathResourceTypes) && capability.getSelectors().isEmpty() &&
-                                StringUtils.isEmpty(capability.getRequestMethod()) && StringUtils.isEmpty(capability.getRequestExtension())
-                    ).findFirst();
-                    rootCapability.ifPresent(capability -> {
-                        providedCapabilities.remove(capability);
-                        ProvidedResourceTypeCapability replacement =
-                                ProvidedResourceTypeCapability.builder().fromCapability(capability)
-                                        .withExtendsResourceType(extendedResourceType).build();
-                        providedCapabilities.add(replacement);
-
-                    });
-                    if (!rootCapability.isPresent()) {
-                        providedCapabilities.add(
-                                ProvidedResourceTypeCapability.builder()
-                                        .withResourceTypes(processSearchPathResourceTypes(resourceType))
-                                        .withVersion(resourceType.getVersion())
-                                        .withExtendsResourceType(extendedResourceType)
-                                        .build());
-                    }
-                    RequiredResourceTypeCapability.Builder requiredBuilder =
-                            RequiredResourceTypeCapability.builder().withResourceType(extendedResourceType);
-                    extractVersionRange(extendsFile, requiredBuilder, extendedResourceTypeVersion);
-                    requiredCapabilities.add(requiredBuilder.build());
+                Parameters parameters = OSGiHeader.parseHeader(extend);
+                if (parameters.size() < 1 || parameters.size() > 1) {
+                    log.error(String.format("The file '%s' must contain one clause only (not multiple ones separated by ','", extendsFile));
                 }
+                Entry<String, Attrs> extendsParameter = parameters.entrySet().iterator().next();
+                for (String attributeName : extendsParameter.getValue().keySet()) {
+                    if (!EXTENDS_ALLOWED_ATTRIBUTE_NAMES.contains(attributeName)) {
+                        log.error(String.format("Found attribute/directive %s in file %s. Only the following attributes or directives may be used in the extends file: %s", attributeName, extendsFile, String.join(",", EXTENDS_ALLOWED_ATTRIBUTE_NAMES)));
+                    }
+                }
+                String extendedResourceType = FilenameUtils.normalize(extendsParameter.getKey(), true);
+                boolean isOptional = aQute.bnd.osgi.Constants.OPTIONAL.equals(extendsParameter.getValue().get(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE));
+                Set<String> searchPathResourceTypes = processSearchPathResourceTypes(resourceType);
+                Optional<ProvidedResourceTypeCapability> rootCapability = providedCapabilities.stream().filter(capability ->
+                    capability.getResourceTypes().equals(searchPathResourceTypes) && capability.getSelectors().isEmpty() &&
+                            StringUtils.isEmpty(capability.getRequestMethod()) && StringUtils.isEmpty(capability.getRequestExtension())
+                ).findFirst();
+                rootCapability.ifPresent(capability -> {
+                    providedCapabilities.remove(capability);
+                    ProvidedResourceTypeCapability replacement =
+                            ProvidedResourceTypeCapability.builder().fromCapability(capability)
+                                    .withExtendsResourceType(extendedResourceType).build();
+                    providedCapabilities.add(replacement);
+
+                });
+                if (!rootCapability.isPresent()) {
+                    providedCapabilities.add(
+                            ProvidedResourceTypeCapability.builder()
+                                    .withResourceTypes(processSearchPathResourceTypes(resourceType))
+                                    .withVersion(resourceType.getVersion())
+                                    .withExtendsResourceType(extendedResourceType)
+                                    .build());
+                }
+                RequiredResourceTypeCapability.Builder requiredBuilder =
+                        RequiredResourceTypeCapability.builder().withResourceType(extendedResourceType);
+                if (isOptional) {
+                    requiredBuilder.withIsOptional();
+                }
+                extractVersionRange(extendsFile, requiredBuilder, extendsParameter.getValue().getVersion());
+                requiredCapabilities.add(requiredBuilder.build());
             }
         } catch (IOException e) {
             log.error(String.format("Unable to read file %s.", extendsFile.toString()), e);
@@ -97,15 +116,17 @@ public class FileProcessor {
         try {
             List<String> requiredResourceTypes = Files.readAllLines(requiresFile, StandardCharsets.UTF_8);
             for (String requiredResourceType : requiredResourceTypes) {
-                if (StringUtils.isNotEmpty(requiredResourceType)) {
-                    String[] requireParts = requiredResourceType.split(";");
-                    String resourceType = FilenameUtils.normalize(requireParts[0], true);
-                    String version = requireParts.length > 1 ? requireParts[1] : null;
-                    RequiredResourceTypeCapability.Builder requiredBuilder =
-                            RequiredResourceTypeCapability.builder().withResourceType(resourceType);
-                    extractVersionRange(requiresFile, requiredBuilder, version);
-                    requiredCapabilities.add(requiredBuilder.build());
+                Parameters parameters = OSGiHeader.parseHeader(requiredResourceType);
+                if (parameters.size() < 1 || parameters.size() > 1) {
+                    log.error(String.format("Each line in file '%s' must contain one clause only (not multiple ones separated by ',', skipping line", requiresFile));
+                    continue;
                 }
+                Entry<String, Attrs> requiresParameter = parameters.entrySet().iterator().next();
+                String resourceType = FilenameUtils.normalize(requiresParameter.getKey(), true);
+                RequiredResourceTypeCapability.Builder requiredBuilder =
+                        RequiredResourceTypeCapability.builder().withResourceType(resourceType);
+                extractVersionRange(requiresFile, requiredBuilder, requiresParameter.getValue().getVersion());
+                requiredCapabilities.add(requiredBuilder.build());
             }
         } catch (IOException e) {
             log.error(String.format("Unable to read file %s.", requiresFile.toString()), e);
