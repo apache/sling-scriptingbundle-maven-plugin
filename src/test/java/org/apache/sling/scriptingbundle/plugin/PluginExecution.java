@@ -16,4 +16,28 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-'String';
+package org.apache.sling.scriptingbundle.plugin;
+
+import java.util.Map;
+
+import org.apache.sling.scriptingbundle.plugin.capability.Capabilities;
+
+public class PluginExecution {
+    private final Capabilities capabilities;
+    private final Map<String, String> scriptEngineMappings;
+
+    public PluginExecution(Capabilities capabilities, Map<String, String> scriptEngineMappings) {
+        super();
+        this.capabilities = capabilities;
+        this.scriptEngineMappings = scriptEngineMappings;
+    }
+
+    public Capabilities getCapabilities() {
+        return capabilities;
+    }
+
+    public Map<String, String> getScriptEngineMappings() {
+        return scriptEngineMappings;
+    }
+
+}

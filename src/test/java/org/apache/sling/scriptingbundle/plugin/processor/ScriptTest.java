@@ -21,10 +21,6 @@ package org.apache.sling.scriptingbundle.plugin.processor;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-
 public class ScriptTest {
 
     @Test
