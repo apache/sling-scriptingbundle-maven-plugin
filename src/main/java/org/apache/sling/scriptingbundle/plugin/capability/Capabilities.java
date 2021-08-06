@@ -161,17 +161,4 @@ public class Capabilities {
         return new Capabilities(providedResourceTypeCapabilities, providedScriptCapabilities, requiredResourceTypeCapabilities);
     }
 
-    private void processListAttribute(@NotNull String capabilityAttribute, @NotNull StringBuilder builder, @NotNull Set<String> values) {
-        builder.append(capabilityAttribute).append("=").append("\"");
-        int valuesSize = values.size();
-        int valueIndex = 0;
-        for (String item : values) {
-            builder.append(item);
-            if (valueIndex < valuesSize - 1) {
-                builder.append(",");
-            }
-            valueIndex++;
-        }
-        builder.append("\"");
-    }
 }

@@ -151,7 +151,7 @@ public class ProvidedResourceTypeCapability {
         }
 
         public Builder withResourceTypes(@NotNull String... resourceTypes) {
-            return withResourceTypes(new LinkedHashSet<String>(Arrays.asList(resourceTypes)));
+            return withResourceTypes(new LinkedHashSet<>(Arrays.asList(resourceTypes)));
         }
 
         public Builder withResourceType(@NotNull String resourceType) {
@@ -198,7 +198,7 @@ public class ProvidedResourceTypeCapability {
         }
 
         public Builder withSelectors(@NotNull String... selectors) {
-            return withSelectors(new LinkedHashSet<String>(Arrays.asList(selectors)));
+            return withSelectors(new LinkedHashSet<>(Arrays.asList(selectors)));
         }
 
         public Builder fromCapability(@NotNull ProvidedResourceTypeCapability capability) {
