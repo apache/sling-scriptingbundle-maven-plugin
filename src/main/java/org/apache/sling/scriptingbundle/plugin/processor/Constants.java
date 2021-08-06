@@ -37,12 +37,12 @@ public final class Constants {
     public static final String EXTENDS_FILE = "extends";
     public static final String REQUIRES_FILE = "requires";
     public static final String CAPABILITY_NS = "sling.servlet";
-    public static final String CAPABILITY_RESOURCE_TYPE_AT = ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + ":List<String>";
-    public static final String CAPABILITY_SELECTORS_AT = ServletResolverConstants.SLING_SERVLET_SELECTORS + ":List<String>";
+    public static final String CAPABILITY_RESOURCE_TYPE_AT = ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES;
+    public static final String CAPABILITY_SELECTORS_AT = ServletResolverConstants.SLING_SERVLET_SELECTORS;
     public static final String CAPABILITY_EXTENSIONS_AT = ServletResolverConstants.SLING_SERVLET_EXTENSIONS;
     public static final String CAPABILITY_METHODS_AT = ServletResolverConstants.SLING_SERVLET_METHODS;
     public static final String CAPABILITY_PATH_AT = ServletResolverConstants.SLING_SERVLET_PATHS;
-    public static final String CAPABILITY_VERSION_AT = "version:Version";
+    public static final String CAPABILITY_VERSION_AT = aQute.bnd.osgi.Constants.VERSION_ATTRIBUTE;
     public static final String CAPABILITY_EXTENDS_AT = "extends";
     public static final String CAPABILITY_SCRIPT_ENGINE_AT = "scriptEngine";
     public static final String CAPABILITY_SCRIPT_EXTENSION_AT = "scriptExtension";

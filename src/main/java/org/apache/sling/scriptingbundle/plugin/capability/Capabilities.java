@@ -37,6 +37,9 @@ import org.apache.sling.scriptingbundle.plugin.processor.ResourceTypeFolderAnaly
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.VersionRange;
 
+import aQute.bnd.header.Attrs;
+import aQute.bnd.header.Parameters;
+
 public class Capabilities {
 
     private final Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities;
@@ -74,84 +77,65 @@ public class Capabilities {
     }
 
     public @NotNull String getProvidedCapabilitiesString() {
-        StringBuilder builder = new StringBuilder();
-        int pcNum = getProvidedResourceTypeCapabilities().size();
-        int psNum = getProvidedScriptCapabilities().size();
-        int pcIndex = 0;
-        int psIndex = 0;
+        Parameters parameters = new Parameters();
         for (ProvidedResourceTypeCapability capability : getProvidedResourceTypeCapabilities()) {
-            builder.append(Constants.CAPABILITY_NS).append(";");
-            processListAttribute(Constants.CAPABILITY_RESOURCE_TYPE_AT, builder,capability.getResourceTypes());
+            Attrs attributes = new Attrs();
+            attributes.putTyped(Constants.CAPABILITY_RESOURCE_TYPE_AT, capability.getResourceTypes());
             Optional.ofNullable(capability.getScriptEngine()).ifPresent(scriptEngine ->
-                    builder.append(";")
-                            .append(Constants.CAPABILITY_SCRIPT_ENGINE_AT).append("=").append("\"").append(scriptEngine).append("\"")
+                    attributes.put(Constants.CAPABILITY_SCRIPT_ENGINE_AT, scriptEngine)
             );
             Optional.ofNullable(capability.getScriptExtension()).ifPresent(scriptExtension ->
-                    builder.append(";")
-                            .append(Constants.CAPABILITY_SCRIPT_EXTENSION_AT).append("=").append("\"").append(scriptExtension).append("\"")
+                    attributes.put(Constants.CAPABILITY_SCRIPT_EXTENSION_AT, scriptExtension)
             );
             Optional.ofNullable(capability.getVersion()).ifPresent(version ->
-                    builder.append(";")
-                            .append(Constants.CAPABILITY_VERSION_AT).append("=").append("\"").append(version).append("\"")
+                    attributes.putTyped(Constants.CAPABILITY_VERSION_AT, new aQute.bnd.version.Version(version.toString()))
             );
             Optional.ofNullable(capability.getExtendsResourceType()).ifPresent(extendedResourceType ->
-                    builder.append(";")
-                            .append(Constants.CAPABILITY_EXTENDS_AT).append("=").append("\"").append(extendedResourceType).append("\"")
+                    attributes.put(Constants.CAPABILITY_EXTENDS_AT, extendedResourceType)
             );
             Optional.ofNullable(capability.getRequestMethod()).ifPresent(method ->
-                    builder.append(";")
-                            .append(Constants.CAPABILITY_METHODS_AT).append("=").append("\"").append(method).append("\"")
+                    attributes.put(Constants.CAPABILITY_METHODS_AT, method)
             );
             Optional.ofNullable(capability.getRequestExtension()).ifPresent(requestExtension ->
-                    builder.append(";")
-                            .append(Constants.CAPABILITY_EXTENSIONS_AT).append("=").append("\"").append(requestExtension).append("\"")
+                    attributes.put(Constants.CAPABILITY_EXTENSIONS_AT, requestExtension)
             );
             if (!capability.getSelectors().isEmpty()) {
-                builder.append(";");
-                processListAttribute(Constants.CAPABILITY_SELECTORS_AT, builder, capability.getSelectors());
+                attributes.putTyped(Constants.CAPABILITY_SELECTORS_AT, capability.getSelectors());
             }
-            if (pcIndex < pcNum - 1) {
-                builder.append(",");
-            }
-            pcIndex++;
+            parameters.add(Constants.CAPABILITY_NS, attributes);
         }
-        if (builder.length() > 0 && psNum > 0) {
-            builder.append(",");
-        }
+
         for (ProvidedScriptCapability scriptCapability : getProvidedScriptCapabilities()) {
-            builder.append(Constants.CAPABILITY_NS).append(";").append(Constants.CAPABILITY_PATH_AT).append("=\"").append(scriptCapability.getPath()).append(
-                    "\";").append(Constants.CAPABILITY_SCRIPT_ENGINE_AT).append("=").append(scriptCapability.getScriptEngine()).append(";")
-                    .append(Constants.CAPABILITY_SCRIPT_EXTENSION_AT).append("=").append(scriptCapability.getScriptExtension());
-            if (psIndex < psNum - 1) {
-                builder.append(",");
-            }
-            psIndex++;
+            Attrs attributes = new Attrs();
+            attributes.put(Constants.CAPABILITY_PATH_AT, scriptCapability.getPath());
+            attributes.put(Constants.CAPABILITY_SCRIPT_ENGINE_AT, scriptCapability.getScriptEngine());
+            attributes.put(Constants.CAPABILITY_SCRIPT_EXTENSION_AT, scriptCapability.getScriptExtension());
+            parameters.add(Constants.CAPABILITY_NS, attributes);
         }
-        return builder.toString();
+        return parameters.toString();
     }
 
     public @NotNull String getRequiredCapabilitiesString() {
-        StringBuilder builder = new StringBuilder();
-        int pcNum = getRequiredResourceTypeCapabilities().size();
-        int pcIndex = 0;
+        Parameters parameters = new Parameters();
         for (RequiredResourceTypeCapability capability : getRequiredResourceTypeCapabilities()) {
-            builder.append(Constants.CAPABILITY_NS).append(";filter:=\"").append("(&(!(" + ServletResolverConstants.SLING_SERVLET_SELECTORS + "=*))");
+            Attrs attributes = new Attrs();
+
+            StringBuilder filterValue = new StringBuilder("(&(!(" + ServletResolverConstants.SLING_SERVLET_SELECTORS + "=*))");
             VersionRange versionRange = capability.getVersionRange();
             if (versionRange != null) {
-                builder.append("(&").append(versionRange.toFilterString("version")).append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append(
-                        "=").append(capability.getResourceType()).append(")))\"");
+                filterValue.append("(&").append(versionRange.toFilterString("version")).append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append(
+                        "=").append(capability.getResourceType()).append(")))");
             } else {
-                builder.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType()).append("))\"");
+                filterValue.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType()).append("))");
             }
+            
+            attributes.put(aQute.bnd.osgi.Constants.FILTER_DIRECTIVE, filterValue.toString());
             if (capability.isOptional()) {
-                builder.append(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE).append("=").append(aQute.bnd.osgi.Constants.OPTIONAL);
+                attributes.put(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE, aQute.bnd.osgi.Constants.OPTIONAL);
             }
-            if (pcIndex < pcNum - 1) {
-                builder.append(",");
-            }
-            pcIndex++;
+            parameters.add(Constants.CAPABILITY_NS, attributes);
         }
-        return builder.toString();
+        return parameters.toString();
     }
 
     public static @NotNull Capabilities fromFileSystemTree(@NotNull Path root, @NotNull Stream<Path> files, @NotNull Logger logger,
