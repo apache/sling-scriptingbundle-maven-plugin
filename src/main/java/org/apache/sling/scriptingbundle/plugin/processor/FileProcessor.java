@@ -19,6 +19,7 @@
 package org.apache.sling.scriptingbundle.plugin.processor;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,7 +52,9 @@ public class FileProcessor {
     private final Map<String, String> scriptEngineMappings;
 
     private static final Collection<String> EXTENDS_ALLOWED_ATTRIBUTE_NAMES = Arrays.asList(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE, aQute.bnd.osgi.Constants.VERSION_ATTRIBUTE);
+    private static final Collection<String> REQUIRES_ALLOWED_ATTRIBUTE_NAMES = Arrays.asList(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE, aQute.bnd.osgi.Constants.VERSION_ATTRIBUTE);
 
+    
     public FileProcessor(Logger log, Set<String> searchPaths, Map<String, String> scriptEngineMappings) {
         this.log = log;
         this.searchPaths = searchPaths;
@@ -60,19 +63,19 @@ public class FileProcessor {
 
     public void processExtendsFile(@NotNull ResourceType resourceType, @NotNull Path extendsFile,
                             @NotNull Set<ProvidedResourceTypeCapability> providedCapabilities,
-                            @NotNull Set<RequiredResourceTypeCapability> requiredCapabilities) {
+                            @NotNull Set<RequiredResourceTypeCapability> requiredCapabilities) throws IllegalArgumentException {
         try {
             List<String> extendResources = Files.readAllLines(extendsFile, StandardCharsets.UTF_8);
             if (extendResources.size() == 1) {
                 String extend = extendResources.get(0);
                 Parameters parameters = OSGiHeader.parseHeader(extend);
                 if (parameters.size() < 1 || parameters.size() > 1) {
-                    log.error(String.format("The file '%s' must contain one clause only (not multiple ones separated by ','", extendsFile));
+                    throw new IllegalArgumentException(String.format("The file '%s' must contain one clause only (not multiple ones separated by ',')", extendsFile));
                 }
                 Entry<String, Attrs> extendsParameter = parameters.entrySet().iterator().next();
                 for (String attributeName : extendsParameter.getValue().keySet()) {
                     if (!EXTENDS_ALLOWED_ATTRIBUTE_NAMES.contains(attributeName)) {
-                        log.error(String.format("Found attribute/directive %s in file %s. Only the following attributes or directives may be used in the extends file: %s", attributeName, extendsFile, String.join(",", EXTENDS_ALLOWED_ATTRIBUTE_NAMES)));
+                        throw new IllegalArgumentException(String.format("Found unsupported attribute/directive '%s' in file '%s'. Only the following attributes or directives may be used in the extends file: %s", attributeName, extendsFile, String.join(",", EXTENDS_ALLOWED_ATTRIBUTE_NAMES)));
                     }
                 }
                 String extendedResourceType = FilenameUtils.normalize(extendsParameter.getKey(), true);
@@ -105,9 +108,11 @@ public class FileProcessor {
                 }
                 extractVersionRange(extendsFile, requiredBuilder, extendsParameter.getValue().getVersion());
                 requiredCapabilities.add(requiredBuilder.build());
+            } else {
+                throw new IllegalArgumentException(String.format("The file '%s' must contain one line only (not multiple ones)", extendsFile));
             }
         } catch (IOException e) {
-            log.error(String.format("Unable to read file %s.", extendsFile.toString()), e);
+            throw new UncheckedIOException(String.format("Unable to read file %s.", extendsFile.toString()), e);
         }
     }
 
@@ -118,81 +123,86 @@ public class FileProcessor {
             for (String requiredResourceType : requiredResourceTypes) {
                 Parameters parameters = OSGiHeader.parseHeader(requiredResourceType);
                 if (parameters.size() < 1 || parameters.size() > 1) {
-                    log.error(String.format("Each line in file '%s' must contain one clause only (not multiple ones separated by ',', skipping line", requiresFile));
-                    continue;
+                    throw new IllegalArgumentException(String.format("Each line in file '%s' must contain one clause only (not multiple ones separated by ',')", requiresFile));
                 }
                 Entry<String, Attrs> requiresParameter = parameters.entrySet().iterator().next();
+                for (String attributeName : requiresParameter.getValue().keySet()) {
+                    if (!REQUIRES_ALLOWED_ATTRIBUTE_NAMES.contains(attributeName)) {
+                        throw new IllegalArgumentException(String.format("Found unsupported attribute/directive '%s' in file '%s'. Only the following attributes or directives may be used in the requires file: %s", attributeName, requiresFile, String.join(",", REQUIRES_ALLOWED_ATTRIBUTE_NAMES)));
+                    }
+                }
                 String resourceType = FilenameUtils.normalize(requiresParameter.getKey(), true);
+                boolean isOptional = aQute.bnd.osgi.Constants.OPTIONAL.equals(requiresParameter.getValue().get(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE));
                 RequiredResourceTypeCapability.Builder requiredBuilder =
                         RequiredResourceTypeCapability.builder().withResourceType(resourceType);
+                if (isOptional) {
+                    requiredBuilder.withIsOptional();
+                }
                 extractVersionRange(requiresFile, requiredBuilder, requiresParameter.getValue().getVersion());
                 requiredCapabilities.add(requiredBuilder.build());
             }
         } catch (IOException e) {
-            log.error(String.format("Unable to read file %s.", requiresFile.toString()), e);
+            throw new UncheckedIOException(String.format("Unable to read file %s.", requiresFile.toString()), e);
         }
     }
 
     public void processScriptFile(@NotNull Path resourceTypeDirectory, @NotNull Path scriptPath,
                                    @NotNull ResourceType resourceType, @NotNull Set<ProvidedResourceTypeCapability> providedCapabilities) {
-        String filePath = scriptPath.toString();
-        String extension = FilenameUtils.getExtension(filePath);
-        if (StringUtils.isNotEmpty(extension) && scriptEngineMappings.containsKey(extension)) {
-            Path scriptFile = scriptPath.getFileName();
-            if (scriptFile != null) {
-                Path relativeResourceTypeFolder = resourceTypeDirectory.relativize(scriptPath);
-                int pathSegments = relativeResourceTypeFolder.getNameCount();
-                LinkedHashSet<String> selectors = new LinkedHashSet<>();
-                if (pathSegments > 1) {
-                    for (int i = 0; i < pathSegments - 1; i++) {
-                        selectors.add(relativeResourceTypeFolder.getName(i).toString());
-                    }
+        Path scriptFile = scriptPath.getFileName();
+        if (scriptFile != null) {
+            Path relativeResourceTypeFolder = resourceTypeDirectory.relativize(scriptPath);
+            int pathSegments = relativeResourceTypeFolder.getNameCount();
+            LinkedHashSet<String> selectors = new LinkedHashSet<>();
+            if (pathSegments > 1) {
+                for (int i = 0; i < pathSegments - 1; i++) {
+                    selectors.add(relativeResourceTypeFolder.getName(i).toString());
                 }
-                String scriptFileName = scriptFile.toString();
-                Script script = Script.parseScript(scriptFileName);
-                if (script != null) {
-                    String scriptEngine = scriptEngineMappings.get(script.getScriptExtension());
-                    if (scriptEngine != null) {
-                        String scriptName = script.getName();
-                        Set<String> searchPathProcessesResourceTypes = processSearchPathResourceTypes(resourceType);
-                        if (scriptName != null && !resourceType.getResourceLabel().equals(scriptName)) {
-                            selectors.add(script.getName());
-                        }
-                        Optional<ProvidedResourceTypeCapability> extendsCapability = Optional.empty();
-                        if (selectors.isEmpty() && StringUtils.isEmpty(script.getRequestExtension()) &&
-                                StringUtils.isEmpty(script.getRequestMethod())) {
-                            extendsCapability =
-                                    providedCapabilities.stream()
-                                            .filter(capability -> StringUtils.isNotEmpty(capability.getExtendsResourceType()) &&
-                                                    capability.getResourceTypes().equals(searchPathProcessesResourceTypes) &&
-                                                    capability.getSelectors().isEmpty() &&
-                                                    StringUtils.isEmpty(capability.getRequestExtension()) &&
-                                                    StringUtils.isEmpty(capability.getRequestMethod())).findAny();
-                        }
-                        ProvidedResourceTypeCapability.Builder builder = ProvidedResourceTypeCapability.builder()
-                                .withResourceTypes(searchPathProcessesResourceTypes)
-                                .withVersion(resourceType.getVersion())
-                                .withSelectors(selectors)
-                                .withRequestExtension(script.getRequestExtension())
-                                .withRequestMethod(script.getRequestMethod())
-                                .withScriptEngine(scriptEngine)
-                                .withScriptExtension(script.getScriptExtension());
-                        extendsCapability.ifPresent(capability -> {
-                                    builder.withExtendsResourceType(capability.getExtendsResourceType());
-                                    providedCapabilities.remove(capability);
-                                }
-                        );
-                        providedCapabilities.add(builder.build());
-                    } else {
-                        log.warn(String.format("Cannot find a script engine mapping for script %s.", scriptPath));
+            }
+            String scriptFileName = scriptFile.toString();
+            Script script = Script.parseScript(scriptFileName);
+            if (script != null) {
+                String scriptEngine = scriptEngineMappings.get(script.getScriptExtension());
+                if (scriptEngine != null) {
+                    String scriptName = script.getName();
+                    Set<String> searchPathProcessesResourceTypes = processSearchPathResourceTypes(resourceType);
+                    if (scriptName != null && !resourceType.getResourceLabel().equals(scriptName)) {
+                        selectors.add(script.getName());
                     }
+                    Optional<ProvidedResourceTypeCapability> extendsCapability = Optional.empty();
+                    if (selectors.isEmpty() && StringUtils.isEmpty(script.getRequestExtension()) &&
+                            StringUtils.isEmpty(script.getRequestMethod())) {
+                        extendsCapability =
+                                providedCapabilities.stream()
+                                        .filter(capability -> StringUtils.isNotEmpty(capability.getExtendsResourceType()) &&
+                                                capability.getResourceTypes().equals(searchPathProcessesResourceTypes) &&
+                                                capability.getSelectors().isEmpty() &&
+                                                StringUtils.isEmpty(capability.getRequestExtension()) &&
+                                                StringUtils.isEmpty(capability.getRequestMethod())).findAny();
+                    }
+                    ProvidedResourceTypeCapability.Builder builder = ProvidedResourceTypeCapability.builder()
+                            .withResourceTypes(searchPathProcessesResourceTypes)
+                            .withVersion(resourceType.getVersion())
+                            .withSelectors(selectors)
+                            .withRequestExtension(script.getRequestExtension())
+                            .withRequestMethod(script.getRequestMethod())
+                            .withScriptEngine(scriptEngine)
+                            .withScriptExtension(script.getScriptExtension());
+                    extendsCapability.ifPresent(capability -> {
+                                builder.withExtendsResourceType(capability.getExtendsResourceType());
+                                providedCapabilities.remove(capability);
+                            }
+                    );
+                    providedCapabilities.add(builder.build());
                 } else {
-                    log.warn(String.format("File %s does not denote a script.", scriptPath));
+                    log.warn(String.format("Cannot find a script engine mapping for script %s!", scriptPath));
                 }
             } else {
-                log.warn(String.format("Skipping path %s since it has 0 elements.", scriptPath));
+                log.warn(String.format("Skipping file %s not denoting a script as it does not follow the filename patterns outlined at https://sling.apache.org/documentation/the-sling-engine/url-to-script-resolution.html#script-naming-conventions", scriptPath));
             }
+        } else {
+            throw new IllegalArgumentException(String.format("Invalid path given: '%s'.", scriptPath));
         }
+        
     }
 
     private Set<String> processSearchPathResourceTypes(@NotNull ResourceType resourceType) {

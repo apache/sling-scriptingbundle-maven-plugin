@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling</artifactId>
-        <version>41</version>
+        <version>44</version>
         <relativePath />
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -49,6 +49,7 @@
         <maven.version>3.6.0</maven.version>
         <site.jira.version.id>12344664,12347157,12348422,12350010</site.jira.version.id>
         <maven.site.path>${project.artifactId}-archives/${project.artifactId}-LATEST</maven.site.path>
+        <project.build.outputTimestamp>2020-01-22T15:10:38Z</project.build.outputTimestamp>
     </properties>
 
     <build>
@@ -99,6 +100,8 @@
                         <exclude>src/test/resources/**/extends</exclude>
                         <exclude>src/test/resources/**/requires</exclude>
                         <exclude>src/test/resources/**/wrongbar</exclude>
+                        <exclude>src/test/resources/extends/*</exclude>
+                        <exclude>src/test/resources/requires/*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
