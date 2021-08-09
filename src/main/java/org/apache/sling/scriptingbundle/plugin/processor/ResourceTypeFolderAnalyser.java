@@ -19,6 +19,7 @@
 package org.apache.sling.scriptingbundle.plugin.processor;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -88,8 +89,8 @@ public class ResourceTypeFolderAnalyser {
                         }
                     }
                 });
-            } catch (IOException | IllegalArgumentException e) {
-                logger.warn(String.format("Cannot analyse folder %s.", scriptsDirectory.resolve(resourceTypeDirectory).toString()), e);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         }
 
