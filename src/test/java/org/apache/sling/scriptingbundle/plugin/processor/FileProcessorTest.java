@@ -129,6 +129,7 @@ public class FileProcessorTest {
         Path resourceTypeFolder = Paths.get("scripts",  "apps", "my", "resource", "2.0");
         Path script = Paths.get("scripts", "apps", "my", "resource", "2.0", "selectorb", "selectora.POST.abc");
         processor.processScriptFile(resourceTypeFolder, script, MY_RESOURCE_TYPE, providedCapabilities);
+        // this must not throw an exception but a WARN should be emitted in the log to make users aware of potential misconfigurations
         Assert.assertEquals(0, providedCapabilities.size());
     }
 }
