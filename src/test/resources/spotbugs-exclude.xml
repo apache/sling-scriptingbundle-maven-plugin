@@ -25,4 +25,11 @@
         <!-- false positive - https://github.com/spotbugs/spotbugs/issues/259 -->
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
     </Match>
+    <!-- the following two rules are just too strict in the context of this Maven plugin -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>
