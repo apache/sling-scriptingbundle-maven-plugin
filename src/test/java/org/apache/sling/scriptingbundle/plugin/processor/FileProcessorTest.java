@@ -117,7 +117,7 @@ public class FileProcessorTest {
                 .withResourceTypes(new HashSet<>(Arrays.asList("my/resource", "/apps/my/resource")))
                 .withVersion(MY_RESOURCE_TYPE.getVersion())
                 .withRequestMethod("POST")
-                .withSelectors(new HashSet<>(Arrays.asList("selectorb", "selectora")))
+                .withSelectors(Arrays.asList("selectorb", "selectora"))
                 .withScriptEngine("htl")
                 .withScriptExtension("html")
                 .build();

@@ -21,7 +21,7 @@ package org.apache.sling.scriptingbundle.plugin.capability;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -38,12 +38,12 @@ public class ProvidedResourceTypeCapability {
     private final Version version;
     private final String requestExtension;
     private final String requestMethod;
-    private final Set<String> selectors;
+    private final List<String> selectors;
 
     private ProvidedResourceTypeCapability(@NotNull Set<String> resourceTypes, @Nullable String scriptEngine,
                                            @Nullable String scriptExtension, @Nullable String extendsResourceType,
                                            @Nullable Version version, @Nullable String requestExtension, @Nullable String requestMethod,
-                                           @NotNull Set<String> selectors) {
+                                           @NotNull List<String> selectors) {
         this.resourceTypes = resourceTypes;
         this.scriptEngine = scriptEngine;
         this.scriptExtension = scriptExtension;
@@ -94,8 +94,8 @@ public class ProvidedResourceTypeCapability {
     }
 
     @NotNull
-    public Set<String> getSelectors() {
-        return Collections.unmodifiableSet(selectors);
+    public List<String> getSelectors() {
+        return Collections.unmodifiableList(selectors);
     }
 
     @Override
@@ -140,7 +140,7 @@ public class ProvidedResourceTypeCapability {
         private Version version;
         private String requestExtension;
         private String requestMethod;
-        private Set<String> selectors = Collections.emptySet();
+        private List<String> selectors = Collections.emptyList();
 
         public Builder withResourceTypes(@NotNull Set<String> resourceTypes) {
             if (resourceTypes.isEmpty()) {
@@ -192,7 +192,7 @@ public class ProvidedResourceTypeCapability {
             return this;
         }
 
-        public Builder withSelectors(@NotNull Set<String> selectors) {
+        public Builder withSelectors(@NotNull List<String> selectors) {
             this.selectors = selectors;
             return this;
         }

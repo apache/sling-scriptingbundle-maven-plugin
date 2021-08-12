@@ -20,6 +20,7 @@ package org.apache.sling.scriptingbundle.plugin.capability;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -161,4 +162,20 @@ public class Capabilities {
         return new Capabilities(providedResourceTypeCapabilities, providedScriptCapabilities, requiredResourceTypeCapabilities);
     }
 
+<<<<<<< Upstream, based on origin/master
+=======
+    private void processListAttribute(@NotNull String capabilityAttribute, @NotNull StringBuilder builder, @NotNull Collection<String> values) {
+        builder.append(capabilityAttribute).append("=").append("\"");
+        int valuesSize = values.size();
+        int valueIndex = 0;
+        for (String item : values) {
+            builder.append(item);
+            if (valueIndex < valuesSize - 1) {
+                builder.append(",");
+            }
+            valueIndex++;
+        }
+        builder.append("\"");
+    }
+>>>>>>> 29734ef SLING-10726 support same name selectors
 }
