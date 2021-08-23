@@ -23,10 +23,10 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -155,7 +155,7 @@ public class FileProcessor {
             if (scriptFile != null) {
                 Path relativeResourceTypeFolder = resourceTypeDirectory.relativize(scriptPath);
                 int pathSegments = relativeResourceTypeFolder.getNameCount();
-                LinkedHashSet<String> selectors = new LinkedHashSet<>();
+                List<String> selectors = new ArrayList<>();
                 if (pathSegments > 1) {
                     for (int i = 0; i < pathSegments - 1; i++) {
                         selectors.add(relativeResourceTypeFolder.getName(i).toString());

@@ -18,8 +18,8 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.scriptingbundle.plugin.capability;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -58,7 +58,7 @@ public class RequiredResourceTypeCapability {
     }
 
     public boolean isSatisfied(@NotNull ProvidedResourceTypeCapability providedResourceTypeCapability) {
-        Set<String> providedSelectors = providedResourceTypeCapability.getSelectors();
+        List<String> providedSelectors = providedResourceTypeCapability.getSelectors();
         if (providedSelectors.isEmpty()) {
             for (String providedResourceType : providedResourceTypeCapability.getResourceTypes()) {
                 if (resourceType.equals(providedResourceType)) {
