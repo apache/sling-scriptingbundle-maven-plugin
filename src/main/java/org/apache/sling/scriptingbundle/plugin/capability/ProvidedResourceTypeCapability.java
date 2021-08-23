@@ -21,6 +21,7 @@ package org.apache.sling.scriptingbundle.plugin.capability;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -198,7 +199,7 @@ public class ProvidedResourceTypeCapability {
         }
 
         public Builder withSelectors(@NotNull String... selectors) {
-            return withSelectors(new LinkedHashSet<>(Arrays.asList(selectors)));
+            return withSelectors(Arrays.asList(selectors));
         }
 
         public Builder fromCapability(@NotNull ProvidedResourceTypeCapability capability) {
