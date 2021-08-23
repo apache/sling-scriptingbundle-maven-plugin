@@ -18,8 +18,10 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.scriptingbundle.plugin.capability;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -148,6 +150,10 @@ public class ProvidedResourceTypeCapability {
             return this;
         }
 
+        public Builder withResourceTypes(@NotNull String... resourceTypes) {
+            return withResourceTypes(new LinkedHashSet<>(Arrays.asList(resourceTypes)));
+        }
+
         public Builder withResourceType(@NotNull String resourceType) {
             if (StringUtils.isEmpty(resourceType)) {
                 throw new IllegalArgumentException("The script's resourceType cannot be null or empty.");
@@ -189,6 +195,10 @@ public class ProvidedResourceTypeCapability {
         public Builder withSelectors(@NotNull Set<String> selectors) {
             this.selectors = selectors;
             return this;
+        }
+
+        public Builder withSelectors(@NotNull String... selectors) {
+            return withSelectors(new LinkedHashSet<>(Arrays.asList(selectors)));
         }
 
         public Builder fromCapability(@NotNull ProvidedResourceTypeCapability capability) {
