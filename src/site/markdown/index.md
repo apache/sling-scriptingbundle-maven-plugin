@@ -1,20 +1,20 @@
-The Apache Sling Scripting Bundle Maven Plugin helps with generating the OSGi bundle
+The Apache Sling Scripting Bundle Maven Plugin helps with generating the OSGi bundle capability
 headers that bundles which provide embedded or precompiled scripts for server-side
 rendering in an Apache Sling application require in order to have themselves wired up to the
-Apache Sling Servlets Resolver.  When executed, the plugin will define two project properties
+Apache Sling Servlets Resolver. Details on the necessary headers are described at [Bundled Scripts](https://sling.apache.org/documentation/bundles/scripting.html#bundled-scripts).  When executed, the plugin will define two project properties
 (`org.apache.sling.scriptingbundle.maven.plugin.Require-Capability` and
 `org.apache.sling.scriptingbundle.maven.plugin.Provide-Capability`) which can be used to
 populate the corresponding bundle headers.
 
 Bundles that get extended by the
 [`org.apache.sling.servlets.resolver`](https://github.com/apache/sling-org-apache-sling-servlets-resolver)
-with these `Requirements` and`Capabilities` will have their scripts made available automatically with added
+with these `Requirements` and `Capabilities` will have their scripts made available automatically with added
 versioning and dependency support.
 
 Manually defining the `Require-Capability` and `Provide-Capability` bundle headers is error-prone and unnecessary,
 as they can be derived from the file-system layout required for scripts by the resolver (for the most part).
 
-Starting with version `0.3.0`, the JAR also provides a BND plugin.
+Starting with version `0.3.0`, the JAR also provides a [bnd plugin](bnd.html).
 
 ## Usage
 General instructions on how to use the Scripting Bundle Maven Plugin can be found on the
