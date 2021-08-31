@@ -53,6 +53,10 @@
         <github.project.id>apache/sling-scriptingbundle-maven-plugin</github.project.id>
     </properties>
 
+    <prerequisites>
+        <maven>${mavenVersion}</maven>
+    </prerequisites>
+
     <build>
         <plugins>
             <plugin>
