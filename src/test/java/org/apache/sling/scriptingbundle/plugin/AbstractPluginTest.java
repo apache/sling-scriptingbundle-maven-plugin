@@ -204,6 +204,26 @@ public abstract class AbstractPluginTest {
         }
     }
 
+    @Test
+    public void testFileVault1() throws Exception {
+        try {
+            PluginExecution execution = executePluginOnProject("filevault-1");
+            Capabilities capabilities = execution.getCapabilities();
+            Set<ProvidedResourceTypeCapability> pExpected = new HashSet<>(Arrays.asList(
+                    ProvidedResourceTypeCapability.builder().withResourceTypes("my-scripts/image", "/apps/my-scripts/image").withScriptEngine("htl")
+                            .withScriptExtension("html").withExtendsResourceType("generic/image").build()
+            ));
+            Set<RequiredResourceTypeCapability> rExpected = new HashSet<>(Arrays.asList(
+               RequiredResourceTypeCapability.builder().withResourceType("generic/image").build(),
+               RequiredResourceTypeCapability.builder().withResourceType("required/one").build(),
+               RequiredResourceTypeCapability.builder().withResourceType("required/two").build()
+            ));
+            verifyCapabilities(capabilities, pExpected, rExpected, Collections.emptySet(), rExpected);
+        } finally {
+            cleanUp("filevault-1");
+        }
+    }
+
     private void verifyCapabilities(Capabilities capabilities, Set<ProvidedResourceTypeCapability> pExpected, Set<RequiredResourceTypeCapability> rExpected, Set<ProvidedScriptCapability> sExpected, Set<RequiredResourceTypeCapability> urExpected) {
         Set<ProvidedResourceTypeCapability> provided = new HashSet<>(capabilities.getProvidedResourceTypeCapabilities());
         StringBuilder missingProvided = new StringBuilder();

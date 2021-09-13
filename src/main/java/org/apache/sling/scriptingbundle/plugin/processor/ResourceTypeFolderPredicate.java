@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
+import org.apache.sling.scriptingbundle.plugin.processor.filevault.VaultContentXmlReader;
 import org.osgi.framework.Version;
 
 public class ResourceTypeFolderPredicate implements Predicate<Path> {
@@ -69,6 +70,7 @@ public class ResourceTypeFolderPredicate implements Predicate<Path> {
                         Script script = Script.parseScript(childName);
                         if (
                             Constants.EXTENDS_FILE.equals(childName) ||
+                            Constants.VAULT_CONTEXT_XML.equals(childName) && new VaultContentXmlReader(path).getSlingResourceSuperType().isPresent() ||
                             (
                                 script != null &&
                                 (

@@ -53,6 +53,10 @@ public final class Constants {
     public static final String BND_SCRIPT_ENGINE_MAPPINGS = "scriptEngineMappings";
     public static final String BND_SEARCH_PATHS = "searchPaths";
 
+    public static final String VAULT_CONTEXT_XML = ".content.xml";
+    public static final String SLING_RESOURCE_SUPER_TYPE = "sling:resourceSuperType";
+    public static final String SLING_REQUIRED_RESOURCE_TYPES = "sling:requiredResourceTypes";
+
     public static final Map<String, String> DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING;
     public static final Set<String> DEFAULT_SEARCH_PATHS;
     public static final Set<String> DEFAULT_SOURCE_DIRECTORIES;

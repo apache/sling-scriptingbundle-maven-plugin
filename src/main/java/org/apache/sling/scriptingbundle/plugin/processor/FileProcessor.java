@@ -19,6 +19,7 @@
 package org.apache.sling.scriptingbundle.plugin.processor;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -38,6 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.scriptingbundle.plugin.capability.ProvidedResourceTypeCapability;
 import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCapability;
+import org.apache.sling.scriptingbundle.plugin.processor.filevault.VaultContentXmlReader;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.VersionRange;
 
@@ -61,88 +63,102 @@ public class FileProcessor {
         this.scriptEngineMappings = scriptEngineMappings;
     }
 
-    public void processExtendsFile(@NotNull ResourceType resourceType, @NotNull Path extendsFile,
+    public void processExtendsFile(@NotNull ResourceType resourceType, @NotNull Path file,
                             @NotNull Set<ProvidedResourceTypeCapability> providedCapabilities,
                             @NotNull Set<RequiredResourceTypeCapability> requiredCapabilities) throws IllegalArgumentException {
         try {
-            List<String> extendResources = Files.readAllLines(extendsFile, StandardCharsets.UTF_8);
-            if (extendResources.size() == 1) {
-                String extend = extendResources.get(0);
-                Parameters parameters = OSGiHeader.parseHeader(extend);
-                if (parameters.size() < 1 || parameters.size() > 1) {
-                    throw new IllegalArgumentException(String.format("The file '%s' must contain one clause only (not multiple ones separated by ',')", extendsFile));
-                }
-                Entry<String, Attrs> extendsParameter = parameters.entrySet().iterator().next();
-                for (String attributeName : extendsParameter.getValue().keySet()) {
-                    if (!EXTENDS_ALLOWED_ATTRIBUTE_NAMES.contains(attributeName)) {
-                        throw new IllegalArgumentException(String.format("Found unsupported attribute/directive '%s' in file '%s'. Only the following attributes or directives may be used in the extends file: %s", attributeName, extendsFile, String.join(",", EXTENDS_ALLOWED_ATTRIBUTE_NAMES)));
-                    }
-                }
-                String extendedResourceType = FilenameUtils.normalize(extendsParameter.getKey(), true);
-                boolean isOptional = aQute.bnd.osgi.Constants.OPTIONAL.equals(extendsParameter.getValue().get(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE));
-                Set<String> searchPathResourceTypes = processSearchPathResourceTypes(resourceType);
-                Optional<ProvidedResourceTypeCapability> rootCapability = providedCapabilities.stream().filter(capability ->
-                    capability.getResourceTypes().equals(searchPathResourceTypes) && capability.getSelectors().isEmpty() &&
-                            StringUtils.isEmpty(capability.getRequestMethod()) && StringUtils.isEmpty(capability.getRequestExtension())
-                ).findFirst();
-                rootCapability.ifPresent(capability -> {
-                    providedCapabilities.remove(capability);
-                    ProvidedResourceTypeCapability replacement =
-                            ProvidedResourceTypeCapability.builder().fromCapability(capability)
-                                    .withExtendsResourceType(extendedResourceType).build();
-                    providedCapabilities.add(replacement);
-
-                });
-                if (!rootCapability.isPresent()) {
-                    providedCapabilities.add(
-                            ProvidedResourceTypeCapability.builder()
-                                    .withResourceTypes(processSearchPathResourceTypes(resourceType))
-                                    .withVersion(resourceType.getVersion())
-                                    .withExtendsResourceType(extendedResourceType)
-                                    .build());
-                }
-                RequiredResourceTypeCapability.Builder requiredBuilder =
-                        RequiredResourceTypeCapability.builder().withResourceType(extendedResourceType);
-                if (isOptional) {
-                    requiredBuilder.withIsOptional();
-                }
-                extractVersionRange(extendsFile, requiredBuilder, extendsParameter.getValue().getVersion());
-                requiredCapabilities.add(requiredBuilder.build());
+            List<String> extendedResources = Files.readAllLines(file, StandardCharsets.UTF_8);
+            if (extendedResources.size() == 1) {
+                processExtendedResourceType(resourceType, file, providedCapabilities, requiredCapabilities, extendedResources.get(0));
             } else {
-                throw new IllegalArgumentException(String.format("The file '%s' must contain one line only (not multiple ones)", extendsFile));
+                throw new IllegalArgumentException(String.format("The file '%s' must contain one line only (not multiple ones)", file));
             }
         } catch (IOException e) {
-            throw new UncheckedIOException(String.format("Unable to read file %s.", extendsFile.toString()), e);
+            throw new UncheckedIOException(String.format("Unable to read file %s.", file.toString()), e);
         }
+    }
+
+    private void processExtendedResourceType(@NotNull ResourceType resourceType, @NotNull Path extendsFile,
+                           @NotNull Set<ProvidedResourceTypeCapability> providedCapabilities,
+                           @NotNull Set<RequiredResourceTypeCapability> requiredCapabilities, @NotNull String extendedResource) {
+        Parameters parameters = OSGiHeader.parseHeader(extendedResource);
+        if (parameters.size() != 1) {
+            throw new IllegalArgumentException(String.format("The file '%s' must contain one clause only (not multiple ones separated by ',')",
+                    extendsFile));
+        }
+        Entry<String, Attrs> extendsParameter = parameters.entrySet().iterator().next();
+        for (String attributeName : extendsParameter.getValue().keySet()) {
+            if (!EXTENDS_ALLOWED_ATTRIBUTE_NAMES.contains(attributeName)) {
+                throw new IllegalArgumentException(String.format("Found unsupported attribute/directive '%s' in file '%s'. Only the following attributes or directives may be used in the extends file: %s", attributeName,
+                        extendsFile, String.join(",", EXTENDS_ALLOWED_ATTRIBUTE_NAMES)));
+            }
+        }
+        String extendedResourceType = FilenameUtils.normalize(extendsParameter.getKey(), true);
+        boolean isOptional = aQute.bnd.osgi.Constants.OPTIONAL.equals(extendsParameter.getValue().get(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE));
+        Set<String> searchPathResourceTypes = processSearchPathResourceTypes(resourceType);
+        Optional<ProvidedResourceTypeCapability> rootCapability = providedCapabilities.stream().filter(capability ->
+            capability.getResourceTypes().equals(searchPathResourceTypes) && capability.getSelectors().isEmpty() &&
+                    StringUtils.isEmpty(capability.getRequestMethod()) && StringUtils.isEmpty(capability.getRequestExtension())
+        ).findFirst();
+        rootCapability.ifPresent(capability -> {
+            providedCapabilities.remove(capability);
+            ProvidedResourceTypeCapability replacement =
+                    ProvidedResourceTypeCapability.builder().fromCapability(capability)
+                            .withExtendsResourceType(extendedResourceType).build();
+            providedCapabilities.add(replacement);
+
+        });
+        if (!rootCapability.isPresent()) {
+            providedCapabilities.add(
+                    ProvidedResourceTypeCapability.builder()
+                            .withResourceTypes(processSearchPathResourceTypes(resourceType))
+                            .withVersion(resourceType.getVersion())
+                            .withExtendsResourceType(extendedResourceType)
+                            .build());
+        }
+        RequiredResourceTypeCapability.Builder requiredBuilder =
+                RequiredResourceTypeCapability.builder().withResourceType(extendedResourceType);
+        if (isOptional) {
+            requiredBuilder.withIsOptional();
+        }
+        extractVersionRange(extendsFile, requiredBuilder, extendsParameter.getValue().getVersion());
+        requiredCapabilities.add(requiredBuilder.build());
     }
 
     void processRequiresFile(@NotNull Path requiresFile,
                                     @NotNull Set<RequiredResourceTypeCapability> requiredCapabilities) {
         try {
             List<String> requiredResourceTypes = Files.readAllLines(requiresFile, StandardCharsets.UTF_8);
-            for (String requiredResourceType : requiredResourceTypes) {
-                Parameters parameters = OSGiHeader.parseHeader(requiredResourceType);
-                if (parameters.size() < 1 || parameters.size() > 1) {
-                    throw new IllegalArgumentException(String.format("Each line in file '%s' must contain one clause only (not multiple ones separated by ',')", requiresFile));
-                }
-                Entry<String, Attrs> requiresParameter = parameters.entrySet().iterator().next();
-                for (String attributeName : requiresParameter.getValue().keySet()) {
-                    if (!REQUIRES_ALLOWED_ATTRIBUTE_NAMES.contains(attributeName)) {
-                        throw new IllegalArgumentException(String.format("Found unsupported attribute/directive '%s' in file '%s'. Only the following attributes or directives may be used in the requires file: %s", attributeName, requiresFile, String.join(",", REQUIRES_ALLOWED_ATTRIBUTE_NAMES)));
-                    }
-                }
-                String resourceType = FilenameUtils.normalize(requiresParameter.getKey(), true);
-                boolean isOptional = aQute.bnd.osgi.Constants.OPTIONAL.equals(requiresParameter.getValue().get(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE));
-                RequiredResourceTypeCapability.Builder requiredBuilder =
-                        RequiredResourceTypeCapability.builder().withResourceType(resourceType);
-                if (isOptional) {
-                    requiredBuilder.withIsOptional();
-                }
-                extractVersionRange(requiresFile, requiredBuilder, requiresParameter.getValue().getVersion());
-                requiredCapabilities.add(requiredBuilder.build());
-            }
+            processRequiredResourceTypes(requiresFile, requiredCapabilities, requiredResourceTypes);
         } catch (IOException e) {
-            throw new UncheckedIOException(String.format("Unable to read file %s.", requiresFile.toString()), e);
+            throw new UncheckedIOException(String.format("Unable to read file %s.", requiresFile), e);
+        }
+    }
+
+    private void processRequiredResourceTypes(@NotNull Path requiresFile, @NotNull Set<RequiredResourceTypeCapability> requiredCapabilities,
+                           List<String> requiredResourceTypes) {
+        for (String requiredResourceType : requiredResourceTypes) {
+            Parameters parameters = OSGiHeader.parseHeader(requiredResourceType);
+            if (parameters.size() != 1) {
+                throw new IllegalArgumentException(String.format("Each line in file '%s' must contain one clause only (not multiple ones separated by ',')",
+                        requiresFile));
+            }
+            Entry<String, Attrs> requiresParameter = parameters.entrySet().iterator().next();
+            for (String attributeName : requiresParameter.getValue().keySet()) {
+                if (!REQUIRES_ALLOWED_ATTRIBUTE_NAMES.contains(attributeName)) {
+                    throw new IllegalArgumentException(String.format("Found unsupported attribute/directive '%s' in file '%s'. Only the following attributes or directives may be used in the requires file: %s", attributeName,
+                            requiresFile, String.join(",", REQUIRES_ALLOWED_ATTRIBUTE_NAMES)));
+                }
+            }
+            String resourceType = FilenameUtils.normalize(requiresParameter.getKey(), true);
+            boolean isOptional = aQute.bnd.osgi.Constants.OPTIONAL.equals(requiresParameter.getValue().get(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE));
+            RequiredResourceTypeCapability.Builder requiredBuilder =
+                    RequiredResourceTypeCapability.builder().withResourceType(resourceType);
+            if (isOptional) {
+                requiredBuilder.withIsOptional();
+            }
+            extractVersionRange(requiresFile, requiredBuilder, requiresParameter.getValue().getVersion());
+            requiredCapabilities.add(requiredBuilder.build());
         }
     }
 
@@ -234,6 +250,23 @@ public class FileProcessor {
             }
         } catch (IllegalArgumentException ignored) {
             log.warn(String.format("Invalid version range format %s in file %s.", version, requiresFile));
+        }
+    }
+
+    public void processVaultFile(@NotNull Path entry, @NotNull ResourceType resourceType,
+                                 @NotNull Set<ProvidedResourceTypeCapability> providedCapabilities,
+                                 @NotNull Set<RequiredResourceTypeCapability> requiredCapabilities) {
+        try {
+            VaultContentXmlReader reader = new VaultContentXmlReader(entry);
+            if (reader.getSlingResourceSuperType().isPresent()) {
+                processExtendedResourceType(resourceType, entry, providedCapabilities, requiredCapabilities,
+                        reader.getSlingResourceSuperType().get());
+            }
+            if (!reader.getSlingRequiredResourceTypes().isEmpty()) {
+                processRequiredResourceTypes(entry, requiredCapabilities, new ArrayList<>(reader.getSlingRequiredResourceTypes()));
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(String.format("Unable to read file %s.", entry), e);
         }
     }
 }

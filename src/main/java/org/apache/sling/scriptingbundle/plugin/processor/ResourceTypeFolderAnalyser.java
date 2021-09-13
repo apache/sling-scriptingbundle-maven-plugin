@@ -66,6 +66,8 @@ public class ResourceTypeFolderAnalyser {
                                 fileProcessor.processExtendsFile(resourceType, entry, providedCapabilities, requiredCapabilities);
                             } else if (Constants.REQUIRES_FILE.equals(file.toString())) {
                                 fileProcessor.processRequiresFile(entry, requiredCapabilities);
+                            } else if (Constants.VAULT_CONTEXT_XML.equals(file.toString())) {
+                                fileProcessor.processVaultFile(entry, resourceType, providedCapabilities, requiredCapabilities);
                             } else {
                                 fileProcessor.processScriptFile(resourceTypeDirectory, entry, resourceType, providedCapabilities);
                             }
