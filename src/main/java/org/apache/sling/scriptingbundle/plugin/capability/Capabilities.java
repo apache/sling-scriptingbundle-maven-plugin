@@ -21,7 +21,6 @@ package org.apache.sling.scriptingbundle.plugin.capability;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -45,7 +44,6 @@ public class Capabilities {
     private final Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities;
     private final Set<ProvidedScriptCapability> providedScriptCapabilities;
     private final Set<RequiredResourceTypeCapability> requiredResourceTypeCapabilities;
-    private final Set<RequiredResourceTypeCapability> unresolvedRequiredResourceTypeCapabilities;
     public static final Capabilities EMPTY = new Capabilities(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
     public Capabilities(
@@ -55,9 +53,6 @@ public class Capabilities {
         this.providedResourceTypeCapabilities = providedResourceTypeCapabilities;
         this.providedScriptCapabilities = providedScriptCapabilities;
         this.requiredResourceTypeCapabilities = requiredResourceTypeCapabilities;
-        unresolvedRequiredResourceTypeCapabilities = new HashSet<>(requiredResourceTypeCapabilities);
-        providedResourceTypeCapabilities.forEach(providedResourceTypeCapability -> unresolvedRequiredResourceTypeCapabilities
-                .removeIf(requiredResourceTypeCapability -> requiredResourceTypeCapability.isSatisfied(providedResourceTypeCapability)));
     }
 
     public @NotNull Set<ProvidedResourceTypeCapability> getProvidedResourceTypeCapabilities() {
@@ -70,10 +65,6 @@ public class Capabilities {
 
     public @NotNull Set<RequiredResourceTypeCapability> getRequiredResourceTypeCapabilities() {
         return Collections.unmodifiableSet(requiredResourceTypeCapabilities);
-    }
-
-    public @NotNull Set<RequiredResourceTypeCapability> getUnresolvedRequiredResourceTypeCapabilities() {
-        return Collections.unmodifiableSet(unresolvedRequiredResourceTypeCapabilities);
     }
 
     public @NotNull String getProvidedCapabilitiesString() {
@@ -139,7 +130,9 @@ public class Capabilities {
     }
 
     public static @NotNull Capabilities fromFileSystemTree(@NotNull Path root, @NotNull Stream<Path> files, @NotNull Logger logger,
-                                                           @NotNull Set<String> searchPaths, @NotNull Map<String, String> scriptEngineMappings) {
+                                                           @NotNull Set<String> searchPaths,
+                                                           @NotNull Map<String, String> scriptEngineMappings,
+                                                           boolean missingRequirementsOptional) {
         Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities = new LinkedHashSet<>();
         Set<ProvidedScriptCapability> providedScriptCapabilities = new LinkedHashSet<>();
         Set<RequiredResourceTypeCapability> requiredResourceTypeCapabilities = new LinkedHashSet<>();
@@ -158,7 +151,27 @@ public class Capabilities {
                 requiredResourceTypeCapabilities.addAll(pathCapabilities.getRequiredResourceTypeCapabilities());
             }
         });
-        return new Capabilities(providedResourceTypeCapabilities, providedScriptCapabilities, requiredResourceTypeCapabilities);
+        final Set<RequiredResourceTypeCapability> required = new LinkedHashSet<>();
+        if (missingRequirementsOptional) {
+            Set<RequiredResourceTypeCapability> unresolvedRequiredResourceTypeCapabilities =
+                    new LinkedHashSet<>(requiredResourceTypeCapabilities);
+            providedResourceTypeCapabilities.forEach(providedResourceTypeCapability -> unresolvedRequiredResourceTypeCapabilities
+                    .removeIf(
+                            requiredResourceTypeCapability -> requiredResourceTypeCapability.isSatisfied(providedResourceTypeCapability)));
+
+            requiredResourceTypeCapabilities.forEach(requiredResourceTypeCapability -> {
+                if (unresolvedRequiredResourceTypeCapabilities.contains(requiredResourceTypeCapability)) {
+                    required.add(
+                            RequiredResourceTypeCapability.builder().withResourceType(requiredResourceTypeCapability.getResourceType())
+                                    .withVersionRange(requiredResourceTypeCapability.getVersionRange()).withIsOptional().build());
+                } else {
+                    required.add(requiredResourceTypeCapability);
+                }
+            });
+        } else {
+            required.addAll(requiredResourceTypeCapabilities);
+        }
+        return new Capabilities(providedResourceTypeCapabilities, providedScriptCapabilities, required);
     }
 
 }

@@ -135,7 +135,7 @@ public abstract class AbstractPluginTest {
     
             Set<RequiredResourceTypeCapability> rExpected = new HashSet<>(Arrays.asList(
                     RequiredResourceTypeCapability.builder().withResourceType("sling/default")
-                            .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build(),
+                            .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).withIsOptional().build(),
                     RequiredResourceTypeCapability.builder().withResourceType("org/apache/sling/bar").build(),
                     RequiredResourceTypeCapability.builder().withResourceType("org/apache/sling/bar")
                             .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).withIsOptional().build()
@@ -144,11 +144,7 @@ public abstract class AbstractPluginTest {
                     ProvidedScriptCapability.builder(scriptEngineMappings)
                             .withPath("/org.apache.sling.wrongbar/wrongbar.has.too.many.selectors.html").build()
             ));
-            Set<RequiredResourceTypeCapability> urExpected = new HashSet<>(Arrays.asList(
-                    RequiredResourceTypeCapability.builder().withResourceType("sling/default")
-                            .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
-            ));
-            verifyCapabilities(capabilities, pExpected, rExpected, sExpected, urExpected);
+            verifyCapabilities(capabilities, pExpected, rExpected, sExpected);
         } finally {
             cleanUp("project-1");
         }
@@ -174,13 +170,9 @@ public abstract class AbstractPluginTest {
             ));
             Set<RequiredResourceTypeCapability> expectedRequired = new HashSet<>(Arrays.asList(
                     RequiredResourceTypeCapability.builder().withResourceType("sling/scripting/warpDrive")
-                            .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
+                            .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).withIsOptional().build()
             ));
-            Set<RequiredResourceTypeCapability> expectedUnresolvedRequired = new HashSet<>(Arrays.asList(
-                    RequiredResourceTypeCapability.builder().withResourceType("sling/scripting/warpDrive")
-                            .withVersionRange(VersionRange.valueOf("[1.0.0,2.0.0)")).build()
-            ));
-            verifyCapabilities(capabilities, pExpected, expectedRequired, expectedScriptCapabilities, expectedUnresolvedRequired);
+            verifyCapabilities(capabilities, pExpected, expectedRequired, expectedScriptCapabilities);
         } finally {
             cleanUp("project-2");
         }
@@ -198,13 +190,31 @@ public abstract class AbstractPluginTest {
                             .withSelectors(Arrays.asList("selector")).withScriptEngine("htl").withScriptExtension("html")
                             .build()
             ));
-            verifyCapabilities(capabilities, pExpected, Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+            verifyCapabilities(capabilities, pExpected, Collections.emptySet(), Collections.emptySet());
         } finally {
             cleanUp("project-3");
         }
     }
 
-    private void verifyCapabilities(Capabilities capabilities, Set<ProvidedResourceTypeCapability> pExpected, Set<RequiredResourceTypeCapability> rExpected, Set<ProvidedScriptCapability> sExpected, Set<RequiredResourceTypeCapability> urExpected) {
+    @Test
+    public void testProject4() throws Exception {
+        try {
+            PluginExecution execution = executePluginOnProject("project-4");
+            Capabilities capabilities = execution.getCapabilities();
+            Set<ProvidedResourceTypeCapability> pExpected = new HashSet<>(Arrays.asList(
+                    ProvidedResourceTypeCapability.builder().withResourceTypes("components/test", "/apps/components/test")
+                            .withScriptEngine("htl").withScriptExtension("html").build()
+            ));
+            Set<RequiredResourceTypeCapability> rExpected = new HashSet<>(Arrays.asList(
+                    RequiredResourceTypeCapability.builder().withResourceType("components/testhelper").build()
+            ));
+            verifyCapabilities(capabilities, pExpected, rExpected, Collections.emptySet());
+        } finally {
+            cleanUp("project-4");
+        }
+    }
+
+    private void verifyCapabilities(Capabilities capabilities, Set<ProvidedResourceTypeCapability> pExpected, Set<RequiredResourceTypeCapability> rExpected, Set<ProvidedScriptCapability> sExpected) {
         Set<ProvidedResourceTypeCapability> provided = new HashSet<>(capabilities.getProvidedResourceTypeCapabilities());
         StringBuilder missingProvided = new StringBuilder();
         for (ProvidedResourceTypeCapability capability : pExpected) {
@@ -262,29 +272,6 @@ public abstract class AbstractPluginTest {
         }
         if (extraProvidedScripts.length() > 0) {
             fail(extraProvidedScripts.toString());
-        }
-    
-        Set<RequiredResourceTypeCapability> unresolvedRequired =
-                new HashSet<>(capabilities.getUnresolvedRequiredResourceTypeCapabilities());
-        assertEquals(urExpected.size(), unresolvedRequired.size());
-        StringBuilder missingUnresolvedRequired = new StringBuilder();
-        for (RequiredResourceTypeCapability capability : urExpected) {
-            boolean removed = unresolvedRequired.remove(capability);
-            if (!removed) {
-                missingUnresolvedRequired.append("Missing unresolved required capability: ").append(capability.toString())
-                        .append(System.lineSeparator());
-            }
-        }
-        if (missingUnresolvedRequired.length() > 0) {
-            fail(missingUnresolvedRequired.toString());
-        }
-        StringBuilder extraUnresolvedRequired = new StringBuilder();
-        for (RequiredResourceTypeCapability capability : unresolvedRequired) {
-            extraUnresolvedRequired.append("Extra unresolved required capability: ").append(capability.toString())
-                    .append(System.lineSeparator());
-        }
-        if (extraUnresolvedRequired.length() > 0) {
-            fail(extraUnresolvedRequired.toString());
         }
     }
 }

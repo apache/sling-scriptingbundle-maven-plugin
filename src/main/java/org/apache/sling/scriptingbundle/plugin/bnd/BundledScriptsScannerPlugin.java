@@ -93,7 +93,7 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
         scriptEngineMappings = getConfiguredScriptEngineMappings();
         capabilities = Capabilities
                 .fromFileSystemTree(workDirectory, walkPath(workDirectory, includes, excludes), logger,
-                getConfiguredSearchPaths(), scriptEngineMappings);
+                getConfiguredSearchPaths(), scriptEngineMappings, getMissingRequirementsOptional());
         String providedCapabilitiesDefinition = capabilities.getProvidedCapabilitiesString();
         String requiredCapabilitiesDefinition = capabilities.getRequiredCapabilitiesString();
 
@@ -142,7 +142,6 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
     }
 
     private Set<PathMatcher> getConfiguredExcludes() {
-
         String excludesCSV = pluginProperties.get(Constants.BND_EXCLUDES);
         if (StringUtils.isNotEmpty(excludesCSV)) {
             return Collections.unmodifiableSet(Arrays.stream(excludesCSV.split(",")).map(String::trim)
@@ -187,6 +186,15 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
             return Collections.unmodifiableSet(Arrays.stream(searchPathsString.split(",")).map(String::trim).collect(Collectors.toSet()));
         }
         return Constants.DEFAULT_SEARCH_PATHS;
+    }
+
+    private boolean getMissingRequirementsOptional() {
+        String missingRequirementsOptionalString = pluginProperties.get(Constants.BND_MISSING_REQUIREMENTS_OPTIONAL);
+        if (missingRequirementsOptionalString != null) {
+            missingRequirementsOptionalString = missingRequirementsOptionalString.trim().toLowerCase();
+            return !"false".equals(missingRequirementsOptionalString);
+        }
+        return true;
     }
 
     private Stream<Path> walkPath(Path path, Set<PathMatcher> includes, Set<PathMatcher> excludes) throws IOException {

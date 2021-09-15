@@ -78,7 +78,7 @@ public class RequiredResourceTypeCapability {
 
     @Override
     public String toString() {
-        return String.format("%s{resourceType=%s, versionRange=%s, isOptonal=%s}", this.getClass().getSimpleName(),
+        return String.format("%s{resourceType=%s, versionRange=%s, isOptional=%s}", this.getClass().getSimpleName(),
                 resourceType, versionRange, isOptional);
     }
 
