@@ -41,14 +41,10 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.utils.io.DirectoryScanner;
-import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.scriptingbundle.plugin.capability.Capabilities;
-import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCapability;
 import org.apache.sling.scriptingbundle.plugin.processor.Constants;
 import org.apache.sling.scriptingbundle.plugin.processor.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.osgi.framework.Version;
-import org.osgi.framework.VersionRange;
 
 /**
  * The {@code metadata} goal will generate two Maven project properties, namely
