@@ -70,13 +70,10 @@ public class ResourceTypeFolderAnalyser {
                                 fileProcessor.processScriptFile(resourceTypeDirectory, entry, resourceType, providedCapabilities);
                             }
                         }
-                    } else if (Files.isDirectory(entry) && !resourceTypeFolderPredicate.test(entry)) {
+                    } else if (Files.isDirectory(entry)) {
                         try (Stream<Path> selectorFilesStream = Files.walk(entry).filter(Files::isRegularFile).filter(file -> {
                             Path fileParent = file.getParent();
                             while (!resourceTypeDirectory.equals(fileParent)) {
-                                if (resourceTypeFolderPredicate.test(fileParent)) {
-                                    return false;
-                                }
                                 fileParent = fileParent.getParent();
                             }
                             return true;

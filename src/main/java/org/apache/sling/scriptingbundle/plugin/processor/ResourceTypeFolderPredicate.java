@@ -52,36 +52,14 @@ public class ResourceTypeFolderPredicate implements Predicate<Path> {
         } catch (IllegalArgumentException ignored) {
             // last segment does not denote a version
         }
-        String resourceTypeLabel;
         if (lastSegment != null) {
-            String lastSegmentString = lastSegment.toString();
-            int lastDotIndex = lastSegmentString.lastIndexOf('.');
-            if (lastDotIndex != -1 && lastDotIndex < lastSegmentString.length() - 1) {
-                resourceTypeLabel = lastSegmentString.substring(++lastDotIndex);
-            } else {
-                resourceTypeLabel = lastSegmentString;
-            }
             try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(folder, Files::isRegularFile)) {
                 for (Path path : directoryStream) {
                     Path fileName = path.getFileName();
                     if (fileName != null) {
                         String childName = fileName.toString();
                         Script script = Script.parseScript(childName);
-                        if (
-                            Constants.EXTENDS_FILE.equals(childName) ||
-                            (
-                                script != null &&
-                                (
-                                    resourceTypeLabel.equals(script.getName()) ||
-                                    (
-                                        script.getName() == null &&
-                                        (
-                                            "html".equals(script.getRequestExtension()) || "GET".equals(script.getRequestMethod())
-                                        )
-                                    )
-                                )
-                            )
-                        ) {
+                        if (Constants.EXTENDS_FILE.equals(childName) || script != null) {
                             return true;
                         }
                     }
