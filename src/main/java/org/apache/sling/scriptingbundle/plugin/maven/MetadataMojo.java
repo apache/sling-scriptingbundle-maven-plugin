@@ -41,14 +41,10 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.utils.io.DirectoryScanner;
-import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.scriptingbundle.plugin.capability.Capabilities;
-import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCapability;
 import org.apache.sling.scriptingbundle.plugin.processor.Constants;
 import org.apache.sling.scriptingbundle.plugin.processor.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.osgi.framework.Version;
-import org.osgi.framework.VersionRange;
 
 /**
  * The {@code metadata} goal will generate two Maven project properties, namely
@@ -171,6 +167,14 @@ public class MetadataMojo extends AbstractMojo {
     @Parameter(property = "scriptingbundle.searchPaths")
     private Set<String> searchPaths;
 
+    /**
+     * When set to "true", the requirements which are not satisfied directly by this project will be marked as optional.
+     *
+     * @since 0.5.0
+     */
+    @Parameter(property = "scriptingbundle.missingRequirementsOptional", defaultValue = "true")
+    private boolean missingRequirementsOptional = true;
+
     private Capabilities capabilities;
 
     public void execute() {
@@ -221,18 +225,15 @@ public class MetadataMojo extends AbstractMojo {
                 scannerPaths.stream().map(workDirectory::resolve),
                 logger,
                 searchPaths,
-                scriptEngineMappings
+                scriptEngineMappings,
+                missingRequirementsOptional
             );
             String providedCapabilitiesDefinition = capabilities.getProvidedCapabilitiesString();
             String requiredCapabilitiesDefinition = capabilities.getRequiredCapabilitiesString();
-            String unresolvedRequiredCapabilitiesDefinition = getUnresolvedRequiredCapabilitiesString(capabilities);
             project.getProperties().put("org.apache.sling.scriptingbundle.maven.plugin." + org.osgi.framework.Constants.PROVIDE_CAPABILITY,
                     providedCapabilitiesDefinition);
             project.getProperties().put("org.apache.sling.scriptingbundle.maven.plugin." + org.osgi.framework.Constants.REQUIRE_CAPABILITY,
                     requiredCapabilitiesDefinition);
-            project.getProperties()
-                    .put("org.apache.sling.scriptingbundle.maven.plugin.Unresolved-" + org.osgi.framework.Constants.REQUIRE_CAPABILITY,
-                            unresolvedRequiredCapabilitiesDefinition);
         } catch (IOException e) {
             logger.error("Unable to generate working directory.", e);
         }
@@ -254,30 +255,6 @@ public class MetadataMojo extends AbstractMojo {
         }
         scanner.scan();
         return scanner;
-    }
-
-    @NotNull
-    private String getUnresolvedRequiredCapabilitiesString(Capabilities capabilities) {
-        StringBuilder builder = new StringBuilder();
-        int pcNum = capabilities.getUnresolvedRequiredResourceTypeCapabilities().size();
-        int pcIndex = 0;
-        for (RequiredResourceTypeCapability capability : capabilities.getUnresolvedRequiredResourceTypeCapabilities()) {
-            builder.append(Constants.CAPABILITY_NS).append(";");
-            builder.append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType());
-            VersionRange versionRange = capability.getVersionRange();
-            if (versionRange != null) {
-                Version left = versionRange.getLeft();
-                if (versionRange.getLeftType() == VersionRange.LEFT_OPEN) {
-                    left = new Version(left.getMajor(), left.getMinor(), left.getMicro() + 1);
-                }
-                builder.append(";").append(Constants.CAPABILITY_VERSION_AT).append("=").append(left);
-            }
-            if (pcIndex < pcNum - 1) {
-                builder.append(",");
-            }
-            pcIndex++;
-        }
-        return builder.toString();
     }
 
     Capabilities getCapabilities() {

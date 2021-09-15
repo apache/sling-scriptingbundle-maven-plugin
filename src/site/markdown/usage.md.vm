@@ -36,6 +36,11 @@ page. In addition to the normal way of structuring scripts in the file tree, the
      is defined as a package name, the resource type label will be the last subpackage (i.e. for `com.mydomain.components.image`, the
      resource type label will be `image`).
 
+Starting with version 0.5.0, the plugin will mark the requirements which are not satisfied by the analysed project as optional; classpath
+dependencies are not checked for provided capabilities. If you want to generate mandatory requirements, set the `missingRequirementsOptional`
+flag to `false`.
+
+
 $h3 Defining scripts
 As an example, let's assume the following layout:
 ```
