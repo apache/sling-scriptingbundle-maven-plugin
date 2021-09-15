@@ -52,6 +52,7 @@ public final class Constants {
     public static final String BND_INCLUDES = "includes";
     public static final String BND_SCRIPT_ENGINE_MAPPINGS = "scriptEngineMappings";
     public static final String BND_SEARCH_PATHS = "searchPaths";
+    public static final String BND_MISSING_REQUIREMENTS_OPTIONAL = "missingRequirementsOptional";
 
     public static final Map<String, String> DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING;
     public static final Set<String> DEFAULT_SEARCH_PATHS;
