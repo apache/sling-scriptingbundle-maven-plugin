@@ -19,7 +19,6 @@
 package org.apache.sling.scriptingbundle.plugin.processor;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -258,10 +257,10 @@ public class FileProcessor {
                                  @NotNull Set<RequiredResourceTypeCapability> requiredCapabilities) {
         try {
             VaultContentXmlReader reader = new VaultContentXmlReader(entry);
-            if (reader.getSlingResourceSuperType().isPresent()) {
-                processExtendedResourceType(resourceType, entry, providedCapabilities, requiredCapabilities,
-                        reader.getSlingResourceSuperType().get());
-            }
+            Optional<String> slingResourceSuperType = reader.getSlingResourceSuperType();
+            slingResourceSuperType.ifPresent(
+                    resourceSuperType -> processExtendedResourceType(resourceType, entry, providedCapabilities, requiredCapabilities,
+                            resourceSuperType));
             if (!reader.getSlingRequiredResourceTypes().isEmpty()) {
                 processRequiredResourceTypes(entry, requiredCapabilities, new ArrayList<>(reader.getSlingRequiredResourceTypes()));
             }

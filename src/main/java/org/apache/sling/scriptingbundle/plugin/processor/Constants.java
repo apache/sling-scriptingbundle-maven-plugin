@@ -54,9 +54,9 @@ public final class Constants {
     public static final String BND_SEARCH_PATHS = "searchPaths";
     public static final String BND_MISSING_REQUIREMENTS_OPTIONAL = "missingRequirementsOptional";
 
-    public static final String VAULT_CONTEXT_XML = ".content.xml";
-    public static final String SLING_RESOURCE_SUPER_TYPE = "sling:resourceSuperType";
+    public static final String SLING_RESOURCE_SUPER_TYPE_XML_LOCAL_NAME = "resourceSuperType";
     public static final String SLING_REQUIRED_RESOURCE_TYPES = "sling:requiredResourceTypes";
+    public static final String SLING_REQUIRED_RESOURCE_TYPES_XML_LOCAL_NAME = "requiredResourceTypes";
 
     public static final Map<String, String> DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING;
     public static final Set<String> DEFAULT_SEARCH_PATHS;

@@ -70,7 +70,7 @@ public class ResourceTypeFolderPredicate implements Predicate<Path> {
                         Script script = Script.parseScript(childName);
                         if (
                             Constants.EXTENDS_FILE.equals(childName) ||
-                            Constants.VAULT_CONTEXT_XML.equals(childName) && new VaultContentXmlReader(path).getSlingResourceSuperType().isPresent() ||
+                            org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML.equals(childName) && new VaultContentXmlReader(path).getSlingResourceSuperType().isPresent() ||
                             (
                                 script != null &&
                                 (

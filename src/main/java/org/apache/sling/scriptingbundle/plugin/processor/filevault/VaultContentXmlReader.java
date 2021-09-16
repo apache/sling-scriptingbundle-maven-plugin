@@ -30,16 +30,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.jcr.PropertyType;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.jackrabbit.spi.commons.name.NameConstants;
 import org.apache.jackrabbit.vault.util.DocViewProperty;
+import org.apache.sling.jcr.resource.api.JcrResourceConstants;
 import org.apache.sling.scriptingbundle.plugin.processor.Constants;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -54,13 +58,14 @@ public class VaultContentXmlReader {
             documentBuilderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             documentBuilderFactory.setAttribute(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
             documentBuilderFactory.setExpandEntityReferences(false);
+            documentBuilderFactory.setNamespaceAware(true);
         } catch (IllegalArgumentException e) {
             throw new IllegalStateException("Cannot disable DTD features.", e);
         }
     }
 
-    private final Path path;
     private final String resourceSuperType;
+    private final Path path;
     private final Set<String> requiredResourceTypes;
 
     public VaultContentXmlReader(@NotNull Path path) throws IOException {
@@ -69,17 +74,47 @@ public class VaultContentXmlReader {
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
             Document document = documentBuilder.parse(new InputSource(reader));
-            Element documentElement = document.getDocumentElement();
-            if ("jcr:root".equals(documentElement.getTagName())) {
-                this.resourceSuperType = document.getDocumentElement().getAttribute(Constants.SLING_RESOURCE_SUPER_TYPE);
-                String requiredResourceTypesValue = document.getDocumentElement().getAttribute(Constants.SLING_REQUIRED_RESOURCE_TYPES);
-                if (requiredResourceTypesValue != null) {
-                    DocViewProperty requiredResourceTypesDocView = DocViewProperty.parse(Constants.SLING_REQUIRED_RESOURCE_TYPES,
-                            requiredResourceTypesValue);
-                    requiredResourceTypes.addAll(Arrays.asList(requiredResourceTypesDocView.values));
+            NodeList nodeList = document.getElementsByTagNameNS(NameConstants.JCR_ROOT.getNamespaceURI(),
+                    NameConstants.JCR_ROOT.getLocalName());
+            if (nodeList.getLength() == 1 && nodeList.item(0).equals(document.getDocumentElement())) {
+                String resourceSuperTypeRawValue = document.getDocumentElement().getAttributeNS(JcrResourceConstants.SLING_NAMESPACE_URI,
+                        Constants.SLING_RESOURCE_SUPER_TYPE_XML_LOCAL_NAME);
+                if (StringUtils.isNotEmpty(resourceSuperTypeRawValue)) {
+                    DocViewProperty resourceSuperTypeDocViewProperty =
+                            DocViewProperty.parse(JcrResourceConstants.SLING_RESOURCE_SUPER_TYPE_PROPERTY, resourceSuperTypeRawValue);
+                    if ((resourceSuperTypeDocViewProperty.type == PropertyType.STRING ||
+                            resourceSuperTypeDocViewProperty.type == PropertyType.UNDEFINED) && !resourceSuperTypeDocViewProperty.isMulti) {
+                        this.resourceSuperType = resourceSuperTypeDocViewProperty.values[0];
+                    } else {
+                        throw new IllegalArgumentException(String.format("Invalid %s property value (%s) in file %s.",
+                                JcrResourceConstants.SLING_RESOURCE_SUPER_TYPE_PROPERTY, resourceSuperTypeRawValue, path));
+                    }
+                } else {
+                    this.resourceSuperType = null;
                 }
+
+                String requiredResourceTypesRawValue =
+                        document.getDocumentElement().getAttributeNS(JcrResourceConstants.SLING_NAMESPACE_URI
+                                , Constants.SLING_REQUIRED_RESOURCE_TYPES_XML_LOCAL_NAME);
+                if (StringUtils.isNotEmpty(requiredResourceTypesRawValue)) {
+                    DocViewProperty requiredResourceTypesDocViewProperty =
+                            DocViewProperty.parse(Constants.SLING_REQUIRED_RESOURCE_TYPES,
+                                    requiredResourceTypesRawValue);
+                    if (requiredResourceTypesDocViewProperty.isMulti &&
+                            (requiredResourceTypesDocViewProperty.type == PropertyType.STRING ||
+                                    requiredResourceTypesDocViewProperty.type == PropertyType.UNDEFINED)) {
+                        requiredResourceTypes.addAll(Arrays.asList(requiredResourceTypesDocViewProperty.values));
+                    } else {
+                       throw new IllegalArgumentException(String.format("Invalid %s property value (%s) in file %s.",
+                                Constants.SLING_REQUIRED_RESOURCE_TYPES, requiredResourceTypesRawValue, path));
+                    }
+                }
+
+
             } else {
-                throw new IllegalArgumentException(String.format("Path %s does not seem to be a valid Vault .content.xml file.", path));
+                throw new IllegalArgumentException(String.format(
+                        "Path %s does not seem to provide a Docview format - https://jackrabbit.apache.org/filevault/docview.html.",
+                        path));
             }
         } catch (ParserConfigurationException | SAXException e) {
             throw new IOException(e);
@@ -117,7 +152,7 @@ public class VaultContentXmlReader {
             VaultContentXmlReader other = (VaultContentXmlReader) obj;
             return Objects.equals(path, other.path) && Objects.equals(resourceSuperType, other.resourceSuperType) &&
                     Objects.equals(requiredResourceTypes, other.requiredResourceTypes);
-         }
+        }
         return false;
     }
 }
