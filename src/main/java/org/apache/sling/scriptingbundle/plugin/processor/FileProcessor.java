@@ -35,6 +35,7 @@ import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.scriptingbundle.plugin.capability.ProvidedResourceTypeCapability;
 import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCapability;
@@ -162,7 +163,8 @@ public class FileProcessor {
     }
 
     public void processScriptFile(@NotNull Path resourceTypeDirectory, @NotNull Path scriptPath,
-                                   @NotNull ResourceType resourceType, @NotNull Set<ProvidedResourceTypeCapability> providedCapabilities) {
+                                   @NotNull ResourceType resourceType, @NotNull Set<ProvidedResourceTypeCapability> providedCapabilities,
+                                  boolean inContentPackage) {
         String filePath = scriptPath.toString();
         String extension = FilenameUtils.getExtension(filePath);
         if (StringUtils.isNotEmpty(extension)) {
@@ -173,11 +175,14 @@ public class FileProcessor {
                 List<String> selectors = new ArrayList<>();
                 if (pathSegments > 1) {
                     for (int i = 0; i < pathSegments - 1; i++) {
-                        selectors.add(relativeResourceTypeFolder.getName(i).toString());
+                        selectors.add(inContentPackage ?
+                                PlatformNameFormat.getRepositoryName(relativeResourceTypeFolder.getName(i).toString()) :
+                                relativeResourceTypeFolder.getName(i).toString()
+                        );
                     }
                 }
                 String scriptFileName = scriptFile.toString();
-                Script script = Script.parseScript(scriptFileName);
+                Script script = Script.parseScript(inContentPackage ? PlatformNameFormat.getRepositoryPath(scriptFileName) : scriptFileName);
                 if (script != null) {
                     String scriptEngine = scriptEngineMappings.get(script.getScriptExtension());
                     if (scriptEngine != null) {

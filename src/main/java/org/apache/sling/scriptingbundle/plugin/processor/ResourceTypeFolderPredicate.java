@@ -24,15 +24,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.scriptingbundle.plugin.processor.filevault.VaultContentXmlReader;
 import org.osgi.framework.Version;
 
 public class ResourceTypeFolderPredicate implements Predicate<Path> {
 
     private final Logger logger;
+    private final boolean inContentPackage;
 
-    public ResourceTypeFolderPredicate(Logger logger) {
+    public ResourceTypeFolderPredicate(Logger logger, boolean inContentPackage) {
         this.logger = logger;
+        this.inContentPackage = inContentPackage;
     }
 
     @Override
@@ -62,12 +65,15 @@ public class ResourceTypeFolderPredicate implements Predicate<Path> {
             } else {
                 resourceTypeLabel = lastSegmentString;
             }
+            if (inContentPackage) {
+                resourceTypeLabel = PlatformNameFormat.getRepositoryPath(resourceTypeLabel);
+            }
             try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(folder, Files::isRegularFile)) {
                 for (Path path : directoryStream) {
                     Path fileName = path.getFileName();
                     if (fileName != null) {
                         String childName = fileName.toString();
-                        Script script = Script.parseScript(childName);
+                        Script script = Script.parseScript(inContentPackage ? PlatformNameFormat.getRepositoryPath(childName) : childName);
                         if (
                             Constants.EXTENDS_FILE.equals(childName) ||
                             org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML.equals(childName) && new VaultContentXmlReader(path).getSlingResourceSuperType().isPresent() ||

@@ -49,6 +49,9 @@ public class BundledScriptsScannerPluginTest extends AbstractPluginTest {
         builder.setProperties(bndFile.getParentFile(), builder.loadProperties(bndFile));
         builder.set(BundledScriptsScannerPlugin.PROJECT_ROOT_FOLDER, projectRootFolder.toString());
         builder.set(BundledScriptsScannerPlugin.PROJECT_BUILD_FOLDER, projectTargetFolder.toString());
+        if (FILEVAULT_PROJECTS.contains(projectName)) {
+            builder.set("project.packaging", "content-package");
+        }
         return builder;
     }
 

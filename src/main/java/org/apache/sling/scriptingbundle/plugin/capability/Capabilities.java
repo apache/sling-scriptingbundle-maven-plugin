@@ -132,14 +132,15 @@ public class Capabilities {
     public static @NotNull Capabilities fromFileSystemTree(@NotNull Path root, @NotNull Stream<Path> files, @NotNull Logger logger,
                                                            @NotNull Set<String> searchPaths,
                                                            @NotNull Map<String, String> scriptEngineMappings,
-                                                           boolean missingRequirementsOptional) {
+                                                           boolean missingRequirementsOptional,
+                                                           boolean inContentPackage) {
         Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities = new LinkedHashSet<>();
         Set<ProvidedScriptCapability> providedScriptCapabilities = new LinkedHashSet<>();
         Set<RequiredResourceTypeCapability> requiredResourceTypeCapabilities = new LinkedHashSet<>();
         FileProcessor fileProcessor = new FileProcessor(logger, searchPaths, scriptEngineMappings);
-        ResourceTypeFolderAnalyser resourceTypeFolderAnalyser = new ResourceTypeFolderAnalyser(logger, root, fileProcessor);
+        ResourceTypeFolderAnalyser resourceTypeFolderAnalyser = new ResourceTypeFolderAnalyser(logger, root, fileProcessor, inContentPackage);
         PathOnlyScriptAnalyser
-                pathOnlyScriptAnalyser = new PathOnlyScriptAnalyser(logger, root, scriptEngineMappings, fileProcessor);
+                pathOnlyScriptAnalyser = new PathOnlyScriptAnalyser(logger, root, scriptEngineMappings, fileProcessor, inContentPackage);
         files.forEach(path -> {
             if (Files.isDirectory(path)) {
                 Capabilities resourceTypeCapabilities = resourceTypeFolderAnalyser.getCapabilities(path);

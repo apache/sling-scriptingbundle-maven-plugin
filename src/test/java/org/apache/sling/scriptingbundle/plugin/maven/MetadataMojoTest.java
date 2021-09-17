@@ -20,6 +20,9 @@ package org.apache.sling.scriptingbundle.plugin.maven;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
@@ -45,6 +48,9 @@ public class MetadataMojoTest extends AbstractPluginTest {
         File projectDirectory = Paths.get("src", "test", "resources", projectName).toFile();
         MavenProject project = mojoRule.readMavenProject(projectDirectory);
         MavenSession session = mojoRule.newMavenSession(project);
+        if (FILEVAULT_PROJECTS.contains(projectName)) {
+            project.setPackaging("content-package");
+        }
         MojoExecution execution = mojoRule.newMojoExecution("metadata");
         MetadataMojo validateMojo = (MetadataMojo) mojoRule.lookupConfiguredMojo(session, execution);
         MojoProject mojoProject = new MojoProject();

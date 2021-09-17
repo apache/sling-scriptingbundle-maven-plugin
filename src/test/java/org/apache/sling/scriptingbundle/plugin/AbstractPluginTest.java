@@ -38,6 +38,8 @@ import org.osgi.framework.VersionRange;
 /** Common base class for both Bnd plugin and Maven plugin */
 public abstract class AbstractPluginTest {
 
+    protected static final Set<String> FILEVAULT_PROJECTS = new HashSet<>(Arrays.asList("filevault-1"));
+
     public abstract PluginExecution executePluginOnProject(String projectName) throws Exception;
     
     public abstract void cleanUp(String projectName) throws Exception;
@@ -205,6 +207,8 @@ public abstract class AbstractPluginTest {
                 ProvidedResourceTypeCapability.builder().withResourceTypes("my-scripts/image", "/apps/my-scripts/image")
                         .withScriptEngine("htl").withScriptExtension("html").withExtendsResourceType("generic/image").build(),
                 ProvidedResourceTypeCapability.builder().withResourceTypes("my-scripts/teaser", "/apps/my-scripts/teaser")
+                        .withScriptEngine("htl").withScriptExtension("html").build(),
+                ProvidedResourceTypeCapability.builder().withResourceTypes("my-scripts/escaped:test", "/apps/my-scripts/escaped:test")
                         .withScriptEngine("htl").withScriptExtension("html").build()
             ));
             Set<RequiredResourceTypeCapability> rExpected = new HashSet<>(Arrays.asList(

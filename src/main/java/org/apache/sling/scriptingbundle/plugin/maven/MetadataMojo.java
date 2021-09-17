@@ -175,9 +175,11 @@ public class MetadataMojo extends AbstractMojo {
     @Parameter(property = "scriptingbundle.missingRequirementsOptional", defaultValue = "true")
     private boolean missingRequirementsOptional = true;
 
+    private boolean inContentPackage;
     private Capabilities capabilities;
 
     public void execute() {
+        inContentPackage = "content-package".equals(project.getPackaging());
         Logger logger = new MavenLogger(getLog());
         Path workDirectory = Paths.get(project.getBuild().getDirectory(), "scriptingbundle-maven-plugin");
         try {
@@ -226,7 +228,8 @@ public class MetadataMojo extends AbstractMojo {
                 logger,
                 searchPaths,
                 scriptEngineMappings,
-                missingRequirementsOptional
+                missingRequirementsOptional,
+                inContentPackage
             );
             String providedCapabilitiesDefinition = capabilities.getProvidedCapabilitiesString();
             String requiredCapabilitiesDefinition = capabilities.getRequiredCapabilitiesString();
