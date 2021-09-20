@@ -61,6 +61,7 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
     @Override
     public boolean analyzeJar(Analyzer analyzer) throws Exception {
         logger = new BndLogger(reporter);
+        boolean inContentPackage = "content-package".equals(analyzer.get("project.packaging"));
         Path workDirectory = Paths.get(analyzer.get(PROJECT_BUILD_FOLDER), "scriptingbundle-maven-plugin");
         Files.createDirectories(workDirectory);
         Set<PathMatcher> includes = getConfiguredIncludes();
@@ -93,7 +94,7 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
         scriptEngineMappings = getConfiguredScriptEngineMappings();
         capabilities = Capabilities
                 .fromFileSystemTree(workDirectory, walkPath(workDirectory, includes, excludes), logger,
-                getConfiguredSearchPaths(), scriptEngineMappings, getMissingRequirementsOptional());
+                getConfiguredSearchPaths(), scriptEngineMappings, getMissingRequirementsOptional(), inContentPackage);
         String providedCapabilitiesDefinition = capabilities.getProvidedCapabilitiesString();
         String requiredCapabilitiesDefinition = capabilities.getRequiredCapabilitiesString();
 
@@ -199,10 +200,7 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
 
     private Stream<Path> walkPath(Path path, Set<PathMatcher> includes, Set<PathMatcher> excludes) throws IOException {
         return Files.walk(path).filter(file -> {
-            boolean include = false;
-            if (includes.isEmpty()) {
-                include = true;
-            }
+            boolean include = includes.isEmpty();
             Optional<PathMatcher> includeOptions = includes.stream().filter(pathMatcher -> pathMatcher.matches(file)).findFirst();
             if (includeOptions.isPresent()) {
                 include = true;

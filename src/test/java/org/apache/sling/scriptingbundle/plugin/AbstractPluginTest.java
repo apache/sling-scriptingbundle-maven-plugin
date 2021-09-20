@@ -38,6 +38,8 @@ import org.osgi.framework.VersionRange;
 /** Common base class for both Bnd plugin and Maven plugin */
 public abstract class AbstractPluginTest {
 
+    protected static final Set<String> FILEVAULT_PROJECTS = new HashSet<>(Arrays.asList("filevault-1"));
+
     public abstract PluginExecution executePluginOnProject(String projectName) throws Exception;
     
     public abstract void cleanUp(String projectName) throws Exception;
@@ -193,6 +195,31 @@ public abstract class AbstractPluginTest {
             verifyCapabilities(capabilities, pExpected, Collections.emptySet(), Collections.emptySet());
         } finally {
             cleanUp("project-3");
+        }
+    }
+
+    @Test
+    public void testFileVault1() throws Exception {
+        try {
+            PluginExecution execution = executePluginOnProject("filevault-1");
+            Capabilities capabilities = execution.getCapabilities();
+            Set<ProvidedResourceTypeCapability> pExpected = new HashSet<>(Arrays.asList(
+                ProvidedResourceTypeCapability.builder().withResourceTypes("my-scripts/image", "/apps/my-scripts/image")
+                        .withScriptEngine("htl").withScriptExtension("html").withExtendsResourceType("generic/image").build(),
+                ProvidedResourceTypeCapability.builder().withResourceTypes("my-scripts/teaser", "/apps/my-scripts/teaser")
+                        .withScriptEngine("htl").withScriptExtension("html").build(),
+                ProvidedResourceTypeCapability.builder().withResourceTypes("my-scripts/escaped:test", "/apps/my-scripts/escaped:test")
+                        .withScriptEngine("htl").withScriptExtension("html").build()
+            ));
+            Set<RequiredResourceTypeCapability> rExpected = new HashSet<>(Arrays.asList(
+               RequiredResourceTypeCapability.builder().withResourceType("generic/image").withIsOptional().build(),
+               RequiredResourceTypeCapability.builder().withResourceType("required/one").withIsOptional().build(),
+               RequiredResourceTypeCapability.builder().withResourceType("required/two").withIsOptional().build(),
+               RequiredResourceTypeCapability.builder().withResourceType("my-scripts/image").build()
+            ));
+            verifyCapabilities(capabilities, pExpected, rExpected, Collections.emptySet());
+        } finally {
+            cleanUp("filevault-1");
         }
     }
 

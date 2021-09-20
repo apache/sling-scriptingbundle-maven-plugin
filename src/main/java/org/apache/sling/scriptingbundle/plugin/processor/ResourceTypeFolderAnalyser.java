@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.scriptingbundle.plugin.capability.Capabilities;
 import org.apache.sling.scriptingbundle.plugin.capability.ProvidedResourceTypeCapability;
@@ -41,13 +42,16 @@ public class ResourceTypeFolderAnalyser {
     private final Logger logger;
     private final Path scriptsDirectory;
     private final ResourceTypeFolderPredicate resourceTypeFolderPredicate;
-    private FileProcessor fileProcessor;
+    private final FileProcessor fileProcessor;
+    private final boolean inContentPackage;
 
-    public ResourceTypeFolderAnalyser(@NotNull Logger logger, @NotNull Path scriptsDirectory, @NotNull FileProcessor fileProcessor) {
+    public ResourceTypeFolderAnalyser(@NotNull Logger logger, @NotNull Path scriptsDirectory, @NotNull FileProcessor fileProcessor,
+                                      boolean inContentPackage) {
         this.logger = logger;
         this.scriptsDirectory = scriptsDirectory;
-        this.resourceTypeFolderPredicate = new ResourceTypeFolderPredicate(logger);
+        this.resourceTypeFolderPredicate = new ResourceTypeFolderPredicate(logger, inContentPackage);
         this.fileProcessor = fileProcessor;
+        this.inContentPackage = inContentPackage;
     }
 
     public Capabilities getCapabilities(@NotNull Path resourceTypeDirectory) {
@@ -56,8 +60,14 @@ public class ResourceTypeFolderAnalyser {
         if (resourceTypeDirectory.startsWith(scriptsDirectory) && resourceTypeFolderPredicate.test(resourceTypeDirectory)) {
             try (DirectoryStream<Path> resourceTypeDirectoryStream = Files.newDirectoryStream(resourceTypeDirectory)) {
                 Path relativeResourceTypeDirectory = scriptsDirectory.relativize(resourceTypeDirectory);
-                final ResourceType
-                        resourceType = ResourceType.parseResourceType(FilenameUtils.normalize(relativeResourceTypeDirectory.toString(), true));
+                final ResourceType resourceType =
+                        ResourceType.parseResourceType(
+                            FilenameUtils.normalize(inContentPackage ?
+                                PlatformNameFormat.getRepositoryPath(relativeResourceTypeDirectory.toString()) :
+                                relativeResourceTypeDirectory.toString(),
+                        true
+                            )
+                        );
                 resourceTypeDirectoryStream.forEach(entry -> {
                     if (Files.isRegularFile(entry)) {
                         Path file = entry.getFileName();
@@ -66,8 +76,10 @@ public class ResourceTypeFolderAnalyser {
                                 fileProcessor.processExtendsFile(resourceType, entry, providedCapabilities, requiredCapabilities);
                             } else if (Constants.REQUIRES_FILE.equals(file.toString())) {
                                 fileProcessor.processRequiresFile(entry, requiredCapabilities);
+                            } else if (org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML.equals(file.toString())) {
+                                fileProcessor.processVaultFile(entry, resourceType, providedCapabilities, requiredCapabilities);
                             } else {
-                                fileProcessor.processScriptFile(resourceTypeDirectory, entry, resourceType, providedCapabilities);
+                                fileProcessor.processScriptFile(resourceTypeDirectory, entry, resourceType, providedCapabilities, inContentPackage);
                             }
                         }
                     } else if (Files.isDirectory(entry) && !resourceTypeFolderPredicate.test(entry)) {
@@ -82,7 +94,8 @@ public class ResourceTypeFolderAnalyser {
                             return true;
                         })) {
                             selectorFilesStream.forEach(
-                                    file -> fileProcessor.processScriptFile(resourceTypeDirectory, file, resourceType, providedCapabilities)
+                                    file -> fileProcessor.processScriptFile(resourceTypeDirectory, file, resourceType,
+                                            providedCapabilities, inContentPackage)
                             );
                         } catch (IOException e) {
                             logger.error(String.format("Unable to scan folder %s.", entry.toString()), e);

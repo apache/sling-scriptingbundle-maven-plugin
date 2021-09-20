@@ -58,7 +58,7 @@ public class FileProcessorTest {
         Assert.assertEquals(expectedRequiredCapability, requiredCapabilities.iterator().next());
         Assert.assertEquals(1, providedCapabilities.size());
         ProvidedResourceTypeCapability expectedProvidedCapability = ProvidedResourceTypeCapability.builder()
-                .withResourceTypes(new HashSet<String>(Arrays.asList("my/resource", "/apps/my/resource")))
+                .withResourceTypes(new HashSet<>(Arrays.asList("my/resource", "/apps/my/resource")))
                 .withVersion(MY_RESOURCE_TYPE.getVersion())
                 .withExtendsResourceType("org/apache/sling/bar")
                 .build();
@@ -111,7 +111,7 @@ public class FileProcessorTest {
     public void testScriptValid() {
         Path resourceTypeFolder = Paths.get("apps", "my", "resource", "2.0");
         Path script = Paths.get("apps", "my", "resource", "2.0", "selectorb", "selectora.POST.html");
-        processor.processScriptFile(resourceTypeFolder, script, MY_RESOURCE_TYPE, providedCapabilities);
+        processor.processScriptFile(resourceTypeFolder, script, MY_RESOURCE_TYPE, providedCapabilities, false);
         Assert.assertEquals(1, providedCapabilities.size());
         ProvidedResourceTypeCapability expectedProvidedCapability = ProvidedResourceTypeCapability.builder()
                 .withResourceTypes(new HashSet<>(Arrays.asList("my/resource", "/apps/my/resource")))
@@ -128,7 +128,7 @@ public class FileProcessorTest {
     public void testScriptUnknownExtension() {
         Path resourceTypeFolder = Paths.get("scripts",  "apps", "my", "resource", "2.0");
         Path script = Paths.get("scripts", "apps", "my", "resource", "2.0", "selectorb", "selectora.POST.abc");
-        processor.processScriptFile(resourceTypeFolder, script, MY_RESOURCE_TYPE, providedCapabilities);
+        processor.processScriptFile(resourceTypeFolder, script, MY_RESOURCE_TYPE, providedCapabilities, false);
         // this must not throw an exception but a WARN should be emitted in the log to make users aware of potential misconfigurations
         Assert.assertEquals(0, providedCapabilities.size());
     }

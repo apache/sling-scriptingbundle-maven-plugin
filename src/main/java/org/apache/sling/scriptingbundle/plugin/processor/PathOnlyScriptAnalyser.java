@@ -29,6 +29,7 @@ import java.util.function.Predicate;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.scriptingbundle.plugin.capability.Capabilities;
 import org.apache.sling.scriptingbundle.plugin.capability.ProvidedScriptCapability;
 import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCapability;
@@ -40,13 +41,15 @@ public class PathOnlyScriptAnalyser {
     private final Predicate<Path> isNotAResourceTypeFolder;
     private final Map<String, String> scriptEngineMappings;
     private final FileProcessor fileProcessor;
+    private final boolean inContentPackage;
 
     public PathOnlyScriptAnalyser(@NotNull Logger logger, @NotNull Path scriptsDirectory, @NotNull Map<String, String> scriptEngineMappings,
-                                  @NotNull FileProcessor fileProcessor) {
+                                  @NotNull FileProcessor fileProcessor, boolean inContentPackage) {
         this.scriptsDirectory = scriptsDirectory;
-        this.isNotAResourceTypeFolder = new ResourceTypeFolderPredicate(logger).negate();
+        this.isNotAResourceTypeFolder = new ResourceTypeFolderPredicate(logger, inContentPackage).negate();
         this.scriptEngineMappings = scriptEngineMappings;
         this.fileProcessor = fileProcessor;
+        this.inContentPackage = inContentPackage;
     }
 
     public @NotNull Capabilities getProvidedScriptCapability(@NotNull Path file) {
@@ -68,6 +71,9 @@ public class PathOnlyScriptAnalyser {
                         int dotLastIndex = name.lastIndexOf('.');
                         if (dotLastIndex > -1 && dotLastIndex != name.length() - 1) {
                             String scriptPath = FilenameUtils.normalize("/" + scriptsDirectory.relativize(file).toString(), true);
+                            if (inContentPackage) {
+                                scriptPath = PlatformNameFormat.getRepositoryPath(scriptPath);
+                            }
                             ProvidedScriptCapability providedScriptCapability =
                                     ProvidedScriptCapability.builder(scriptEngineMappings).withPath(scriptPath).build();
                             Path requires = parent.resolve(Constants.REQUIRES_FILE);
