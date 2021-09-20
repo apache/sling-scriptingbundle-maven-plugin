@@ -54,4 +54,9 @@ public class MavenLogger implements Logger {
     public void warn(@NotNull String message, Throwable t) {
         log.warn(message, t);
     }
+
+    @Override
+    public void debug(@NotNull String message) {
+        log.debug(message);
+    }
 }

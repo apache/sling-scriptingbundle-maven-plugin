@@ -57,4 +57,9 @@ public class BndLogger implements Logger {
         String exception = Exceptions.causes(t);
         reporter.warning(message + ": " + exception);
     }
+
+    @Override
+    public void debug(@NotNull String message) {
+        reporter.trace(message);
+    }
 }

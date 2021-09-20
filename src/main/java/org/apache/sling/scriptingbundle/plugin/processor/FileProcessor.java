@@ -217,10 +217,11 @@ public class FileProcessor {
                         );
                         providedCapabilities.add(builder.build());
                     } else {
-                        log.warn(String.format("Cannot find a script engine mapping for script %s.", scriptPath));
+                        log.debug(String.format("Cannot find a script engine mapping for script %s.", scriptPath));
                     }
                 } else {
-                    log.warn(String.format("Skipping file %s not denoting a script as it does not follow the filename patterns outlined at https://sling.apache.org/documentation/the-sling-engine/url-to-script-resolution.html#script-naming-conventions", scriptPath));
+                    log.debug(String.format("Skipping file %s not denoting a script as it does not follow the filename patterns outlined " +
+                            "at https://sling.apache.org/documentation/the-sling-engine/url-to-script-resolution.html#script-naming-conventions", scriptPath));
                 }
             } else {
                 throw new IllegalArgumentException(String.format("Invalid path given: '%s'.", scriptPath));

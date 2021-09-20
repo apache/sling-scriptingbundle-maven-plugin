@@ -49,4 +49,8 @@ public class Slf4jLogger implements Logger {
         logger.warn(message, t);
     }
 
+    @Override
+    public void debug(@NotNull String message) {
+        logger.debug(message);
+    }
 }

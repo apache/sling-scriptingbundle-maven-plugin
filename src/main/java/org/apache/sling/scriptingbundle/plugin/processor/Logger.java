@@ -62,4 +62,11 @@ public interface Logger {
      */
     void warn(@NotNull String message, @NotNull Throwable t);
 
+    /**
+     * Log a debug message.
+     *
+     * @param message the message
+     */
+    void debug(@NotNull String message);
+
 }
