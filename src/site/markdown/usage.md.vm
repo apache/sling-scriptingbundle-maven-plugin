@@ -3,12 +3,14 @@
 #set($h3 = '###')
 #set($h4 = '####')
 
-
 $h2 Usage
 
-The plugin can be used either as a regular Maven plugin or as a [bnd plugin](bnd.html).
+The plugin can be used either as a regular Maven plugin or as a [bnd plugin](bnd.html). Its purpose is to extract the capabilities
+required for packaging the scripts (precompiled or not) into an OSGi bundle. Both versions of the plugin can be used for OSGi bundle
+projects, however the [bnd plugin](bnd.html) can also be used with [FileVault](https://jackrabbit.apache.org/filevault/index.html) content
+package projects.
 
-No matter which approach you choose, the plugin will by default look for scripts in two project directories:
+Both versions of the plugin will, by default, look for scripts in two project directories:
 
   1. `src/main/scripts` - this folder will contain scripts that will be pre-compiled
   2. `src/main/resources/javax.script` - this folder will contain scripts that will be embedded as is
@@ -26,7 +28,8 @@ page. In addition to the normal way of structuring scripts in the file tree, the
      single line with the `resourceType` used for the `extends` capability attribute followed by a `;version=<version-range>`; in this
      case, the plugin will set the `extends` attribute to the given `resourceType` and generate a `Require-Capability` for that
      `resourceType` with the given version range. To generate an optional capability header (when the bundled script extends from
-     a non-bundle, resource script), append `;resolution:=optional` to the line. The line must comply with the OSGI common header syntax from [OSGI Core R7 §3.2.4](http://docs.osgi.org/specification/osgi.core/7.0.0/framework.module.html#framework.common.header.syntax).
+     a non-bundle, resource script), append `;resolution:=optional` to the line. The line must comply with the OSGI common header syntax
+     from [OSGI Core R7 §3.2.4](http://docs.osgi.org/specification/osgi.core/7.0.0/framework.module.html#framework.common.header.syntax).
 
   3. Defining an explicit requirement, without an inheritance relationship (e.g. delegation to another resource type)<br/>
      A `requires` file (assuming the same conventions and syntax as for the `extends` file) will generate a `Require-Capability` for each
