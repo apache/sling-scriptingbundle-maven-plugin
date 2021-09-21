@@ -28,7 +28,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>scriptingbundle-maven-plugin</artifactId>
-    <version>0.4.1-SNAPSHOT</version>
+    <version>0.5.0</version>
     <packaging>maven-plugin</packaging>
 
     <name>Apache Sling Scripting Bundle Maven Plugin</name>
@@ -41,7 +41,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</developerConnection>
         <url>https://github.com/apache/sling-scriptingbundle-maven-plugin/tree/${project.scm.tag}</url>
-        <tag>HEAD</tag>
+        <tag>scriptingbundle-maven-plugin-0.5.0</tag>
     </scm>
 
     <properties>
@@ -49,7 +49,7 @@
         <maven.version>3.6.0</maven.version>
         <site.jira.version.id>12344664,12347157,12348422,12350010,12350474,12350606</site.jira.version.id>
         <maven.site.path>${project.artifactId}-archives/${project.artifactId}-LATEST</maven.site.path>
-        <project.build.outputTimestamp>2021-08-31T07:51:46Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2021-09-21T18:13:00Z</project.build.outputTimestamp>
         <github.project.id>apache/sling-scriptingbundle-maven-plugin</github.project.id>
     </properties>
 
