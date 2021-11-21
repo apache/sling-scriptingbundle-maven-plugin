@@ -125,6 +125,39 @@ public class FileProcessorTest {
     }
 
     @Test
+    public void testMainScriptSelector() {
+        Path resourceTypeFolder = Paths.get("apps", "my", "resource", "test");
+        Path script = Paths.get("apps", "my", "resource", "test", "test.POST.html");
+        processor.processScriptFile(resourceTypeFolder, script, MY_RESOURCE_TYPE, providedCapabilities, false);
+
+        Assert.assertEquals(1, providedCapabilities.size());
+
+        ProvidedResourceTypeCapability expectedProvidedCapability1 = ProvidedResourceTypeCapability.builder()
+                .withResourceTypes(new HashSet<>(Arrays.asList("my/resource", "/apps/my/resource")))
+                .withRequestMethod("POST")
+                .withSelectors(Arrays.asList("test"))
+                .withScriptEngine("htl")
+                .withScriptExtension("html")
+                .build();
+
+        Assert.assertEquals(new HashSet<>(Arrays.asList(expectedProvidedCapability1)), providedCapabilities);
+
+        Path script2 = Paths.get("apps", "my", "resource", "test", "POST.html");
+        processor.processScriptFile(resourceTypeFolder, script2, MY_RESOURCE_TYPE, providedCapabilities, false);
+
+        Assert.assertEquals(2, providedCapabilities.size());
+
+        ProvidedResourceTypeCapability expectedProvidedCapability2 = ProvidedResourceTypeCapability.builder()
+                .withResourceTypes(new HashSet<>(Arrays.asList("my/resource", "/apps/my/resource")))
+                .withRequestMethod("POST")
+                .withScriptEngine("htl")
+                .withScriptExtension("html")
+                .build();
+
+        Assert.assertEquals(new HashSet<>(Arrays.asList(expectedProvidedCapability1, expectedProvidedCapability2)), providedCapabilities);
+    }
+
+    @Test
     public void testScriptUnknownExtension() {
         Path resourceTypeFolder = Paths.get("scripts",  "apps", "my", "resource", "2.0");
         Path script = Paths.get("scripts", "apps", "my", "resource", "2.0", "selectorb", "selectora.POST.abc");
