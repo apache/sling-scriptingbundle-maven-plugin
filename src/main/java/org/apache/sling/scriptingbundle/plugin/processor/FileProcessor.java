@@ -188,8 +188,11 @@ public class FileProcessor {
                     if (scriptEngine != null) {
                         String scriptName = script.getName();
                         Set<String> searchPathProcessesResourceTypes = processSearchPathResourceTypes(resourceType);
-                        if (scriptName != null && !resourceType.getResourceLabel().equals(scriptName)) {
-                            selectors.add(script.getName());
+                        if (scriptName != null) {
+                            if (!resourceType.getResourceLabel().equals(scriptName)
+                            || script.getRequestMethod() != null) {
+                                selectors.add(script.getName());
+                            }
                         }
                         Optional<ProvidedResourceTypeCapability> extendsCapability = Optional.empty();
                         if (selectors.isEmpty() && StringUtils.isEmpty(script.getRequestExtension()) &&
