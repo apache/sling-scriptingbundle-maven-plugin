@@ -1,21 +1,21 @@
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~   http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sling.scriptingbundle.plugin.capability;
 
 import java.nio.file.Files;
@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import aQute.bnd.header.Attrs;
+import aQute.bnd.header.Parameters;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.scriptingbundle.plugin.processor.Constants;
 import org.apache.sling.scriptingbundle.plugin.processor.FileProcessor;
@@ -36,15 +38,13 @@ import org.apache.sling.scriptingbundle.plugin.processor.ResourceTypeFolderAnaly
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.VersionRange;
 
-import aQute.bnd.header.Attrs;
-import aQute.bnd.header.Parameters;
-
 public class Capabilities {
 
     private final Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities;
     private final Set<ProvidedScriptCapability> providedScriptCapabilities;
     private final Set<RequiredResourceTypeCapability> requiredResourceTypeCapabilities;
-    public static final Capabilities EMPTY = new Capabilities(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+    public static final Capabilities EMPTY =
+            new Capabilities(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
     public Capabilities(
             @NotNull Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities,
@@ -72,24 +72,22 @@ public class Capabilities {
         for (ProvidedResourceTypeCapability capability : getProvidedResourceTypeCapabilities()) {
             Attrs attributes = new Attrs();
             attributes.putTyped(Constants.CAPABILITY_RESOURCE_TYPE_AT, capability.getResourceTypes());
-            Optional.ofNullable(capability.getScriptEngine()).ifPresent(scriptEngine ->
-                    attributes.put(Constants.CAPABILITY_SCRIPT_ENGINE_AT, scriptEngine)
-            );
-            Optional.ofNullable(capability.getScriptExtension()).ifPresent(scriptExtension ->
-                    attributes.put(Constants.CAPABILITY_SCRIPT_EXTENSION_AT, scriptExtension)
-            );
-            Optional.ofNullable(capability.getVersion()).ifPresent(version ->
-                    attributes.putTyped(Constants.CAPABILITY_VERSION_AT, new aQute.bnd.version.Version(version.toString()))
-            );
-            Optional.ofNullable(capability.getExtendsResourceType()).ifPresent(extendedResourceType ->
-                    attributes.put(Constants.CAPABILITY_EXTENDS_AT, extendedResourceType)
-            );
-            Optional.ofNullable(capability.getRequestMethod()).ifPresent(method ->
-                    attributes.put(Constants.CAPABILITY_METHODS_AT, method)
-            );
-            Optional.ofNullable(capability.getRequestExtension()).ifPresent(requestExtension ->
-                    attributes.put(Constants.CAPABILITY_EXTENSIONS_AT, requestExtension)
-            );
+            Optional.ofNullable(capability.getScriptEngine())
+                    .ifPresent(scriptEngine -> attributes.put(Constants.CAPABILITY_SCRIPT_ENGINE_AT, scriptEngine));
+            Optional.ofNullable(capability.getScriptExtension())
+                    .ifPresent(scriptExtension ->
+                            attributes.put(Constants.CAPABILITY_SCRIPT_EXTENSION_AT, scriptExtension));
+            Optional.ofNullable(capability.getVersion())
+                    .ifPresent(version -> attributes.putTyped(
+                            Constants.CAPABILITY_VERSION_AT, new aQute.bnd.version.Version(version.toString())));
+            Optional.ofNullable(capability.getExtendsResourceType())
+                    .ifPresent(extendedResourceType ->
+                            attributes.put(Constants.CAPABILITY_EXTENDS_AT, extendedResourceType));
+            Optional.ofNullable(capability.getRequestMethod())
+                    .ifPresent(method -> attributes.put(Constants.CAPABILITY_METHODS_AT, method));
+            Optional.ofNullable(capability.getRequestExtension())
+                    .ifPresent(
+                            requestExtension -> attributes.put(Constants.CAPABILITY_EXTENSIONS_AT, requestExtension));
             if (!capability.getSelectors().isEmpty()) {
                 attributes.putTyped(Constants.CAPABILITY_SELECTORS_AT, capability.getSelectors());
             }
@@ -111,15 +109,27 @@ public class Capabilities {
         for (RequiredResourceTypeCapability capability : getRequiredResourceTypeCapabilities()) {
             Attrs attributes = new Attrs();
 
-            StringBuilder filterValue = new StringBuilder("(&(!(" + ServletResolverConstants.SLING_SERVLET_SELECTORS + "=*))");
+            StringBuilder filterValue =
+                    new StringBuilder("(&(!(" + ServletResolverConstants.SLING_SERVLET_SELECTORS + "=*))");
             VersionRange versionRange = capability.getVersionRange();
             if (versionRange != null) {
-                filterValue.append("(&").append(versionRange.toFilterString("version")).append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append(
-                        "=").append(capability.getResourceType()).append(")))");
+                filterValue
+                        .append("(&")
+                        .append(versionRange.toFilterString("version"))
+                        .append("(")
+                        .append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)
+                        .append("=")
+                        .append(capability.getResourceType())
+                        .append(")))");
             } else {
-                filterValue.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType()).append("))");
+                filterValue
+                        .append("(")
+                        .append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)
+                        .append("=")
+                        .append(capability.getResourceType())
+                        .append("))");
             }
-            
+
             attributes.put(aQute.bnd.osgi.Constants.FILTER_DIRECTIVE, filterValue.toString());
             if (capability.isOptional()) {
                 attributes.put(aQute.bnd.osgi.Constants.RESOLUTION_DIRECTIVE, aQute.bnd.osgi.Constants.OPTIONAL);
@@ -129,18 +139,22 @@ public class Capabilities {
         return parameters.toString();
     }
 
-    public static @NotNull Capabilities fromFileSystemTree(@NotNull Path root, @NotNull Stream<Path> files, @NotNull Logger logger,
-                                                           @NotNull Set<String> searchPaths,
-                                                           @NotNull Map<String, String> scriptEngineMappings,
-                                                           boolean missingRequirementsOptional,
-                                                           boolean inContentPackage) {
+    public static @NotNull Capabilities fromFileSystemTree(
+            @NotNull Path root,
+            @NotNull Stream<Path> files,
+            @NotNull Logger logger,
+            @NotNull Set<String> searchPaths,
+            @NotNull Map<String, String> scriptEngineMappings,
+            boolean missingRequirementsOptional,
+            boolean inContentPackage) {
         Set<ProvidedResourceTypeCapability> providedResourceTypeCapabilities = new LinkedHashSet<>();
         Set<ProvidedScriptCapability> providedScriptCapabilities = new LinkedHashSet<>();
         Set<RequiredResourceTypeCapability> requiredResourceTypeCapabilities = new LinkedHashSet<>();
         FileProcessor fileProcessor = new FileProcessor(logger, searchPaths, scriptEngineMappings);
-        ResourceTypeFolderAnalyser resourceTypeFolderAnalyser = new ResourceTypeFolderAnalyser(logger, root, fileProcessor, inContentPackage);
-        PathOnlyScriptAnalyser
-                pathOnlyScriptAnalyser = new PathOnlyScriptAnalyser(logger, root, scriptEngineMappings, fileProcessor, inContentPackage);
+        ResourceTypeFolderAnalyser resourceTypeFolderAnalyser =
+                new ResourceTypeFolderAnalyser(logger, root, fileProcessor, inContentPackage);
+        PathOnlyScriptAnalyser pathOnlyScriptAnalyser =
+                new PathOnlyScriptAnalyser(logger, root, scriptEngineMappings, fileProcessor, inContentPackage);
         files.forEach(path -> {
             if (Files.isDirectory(path)) {
                 Capabilities resourceTypeCapabilities = resourceTypeFolderAnalyser.getCapabilities(path);
@@ -156,15 +170,17 @@ public class Capabilities {
         if (missingRequirementsOptional) {
             Set<RequiredResourceTypeCapability> unresolvedRequiredResourceTypeCapabilities =
                     new LinkedHashSet<>(requiredResourceTypeCapabilities);
-            providedResourceTypeCapabilities.forEach(providedResourceTypeCapability -> unresolvedRequiredResourceTypeCapabilities
-                    .removeIf(
-                            requiredResourceTypeCapability -> requiredResourceTypeCapability.isSatisfied(providedResourceTypeCapability)));
+            providedResourceTypeCapabilities.forEach(providedResourceTypeCapability ->
+                    unresolvedRequiredResourceTypeCapabilities.removeIf(requiredResourceTypeCapability ->
+                            requiredResourceTypeCapability.isSatisfied(providedResourceTypeCapability)));
 
             requiredResourceTypeCapabilities.forEach(requiredResourceTypeCapability -> {
                 if (unresolvedRequiredResourceTypeCapabilities.contains(requiredResourceTypeCapability)) {
-                    required.add(
-                            RequiredResourceTypeCapability.builder().withResourceType(requiredResourceTypeCapability.getResourceType())
-                                    .withVersionRange(requiredResourceTypeCapability.getVersionRange()).withIsOptional().build());
+                    required.add(RequiredResourceTypeCapability.builder()
+                            .withResourceType(requiredResourceTypeCapability.getResourceType())
+                            .withVersionRange(requiredResourceTypeCapability.getVersionRange())
+                            .withIsOptional()
+                            .build());
                 } else {
                     required.add(requiredResourceTypeCapability);
                 }
@@ -174,5 +190,4 @@ public class Capabilities {
         }
         return new Capabilities(providedResourceTypeCapabilities, providedScriptCapabilities, required);
     }
-
 }

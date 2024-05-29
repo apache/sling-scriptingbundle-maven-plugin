@@ -1,21 +1,21 @@
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~   http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sling.scriptingbundle.plugin.capability;
 
 import java.util.Arrays;
@@ -41,10 +41,15 @@ public class ProvidedResourceTypeCapability {
     private final String requestMethod;
     private final List<String> selectors;
 
-    private ProvidedResourceTypeCapability(@NotNull Set<String> resourceTypes, @Nullable String scriptEngine,
-                                           @Nullable String scriptExtension, @Nullable String extendsResourceType,
-                                           @Nullable Version version, @Nullable String requestExtension, @Nullable String requestMethod,
-                                           @NotNull List<String> selectors) {
+    private ProvidedResourceTypeCapability(
+            @NotNull Set<String> resourceTypes,
+            @Nullable String scriptEngine,
+            @Nullable String scriptExtension,
+            @Nullable String extendsResourceType,
+            @Nullable Version version,
+            @Nullable String requestExtension,
+            @Nullable String requestMethod,
+            @NotNull List<String> selectors) {
         this.resourceTypes = resourceTypes;
         this.scriptEngine = scriptEngine;
         this.scriptExtension = scriptExtension;
@@ -101,9 +106,15 @@ public class ProvidedResourceTypeCapability {
 
     @Override
     public int hashCode() {
-        return Objects
-                .hash(resourceTypes, scriptEngine, scriptExtension, version, requestExtension, extendsResourceType, requestMethod,
-                        selectors);
+        return Objects.hash(
+                resourceTypes,
+                scriptEngine,
+                scriptExtension,
+                version,
+                requestExtension,
+                extendsResourceType,
+                requestMethod,
+                selectors);
     }
 
     @Override
@@ -113,11 +124,14 @@ public class ProvidedResourceTypeCapability {
         }
         if (obj instanceof ProvidedResourceTypeCapability) {
             ProvidedResourceTypeCapability other = (ProvidedResourceTypeCapability) obj;
-            return Objects.equals(resourceTypes, other.resourceTypes) && Objects.equals(scriptEngine, other.scriptEngine) &&
-                    Objects.equals(scriptExtension, other.scriptExtension) &&
-                    Objects.equals(version, other.version) && Objects.equals(requestExtension, other.requestExtension) &&
-                    Objects.equals(extendsResourceType, other.extendsResourceType) && Objects.equals(requestMethod, other.requestMethod) &&
-                    Objects.equals(selectors, other.selectors);
+            return Objects.equals(resourceTypes, other.resourceTypes)
+                    && Objects.equals(scriptEngine, other.scriptEngine)
+                    && Objects.equals(scriptExtension, other.scriptExtension)
+                    && Objects.equals(version, other.version)
+                    && Objects.equals(requestExtension, other.requestExtension)
+                    && Objects.equals(extendsResourceType, other.extendsResourceType)
+                    && Objects.equals(requestMethod, other.requestMethod)
+                    && Objects.equals(selectors, other.selectors);
         }
         return false;
     }
@@ -125,12 +139,17 @@ public class ProvidedResourceTypeCapability {
     @Override
     public String toString() {
         return String.format(
-            "%s{resourceTypes=%s, scriptEngine=%s, scriptEngineExtension=%s, version=%s, selectors=%s, requestExtension=%s, " +
-                    "requestMethod=%s, extendsResourceType=%s}",
-            this.getClass().getSimpleName(), resourceTypes, scriptEngine, scriptExtension, version, selectors, requestExtension,
+                "%s{resourceTypes=%s, scriptEngine=%s, scriptEngineExtension=%s, version=%s, selectors=%s, requestExtension=%s, "
+                        + "requestMethod=%s, extendsResourceType=%s}",
+                this.getClass().getSimpleName(),
+                resourceTypes,
+                scriptEngine,
+                scriptExtension,
+                version,
+                selectors,
+                requestExtension,
                 requestMethod,
-                extendsResourceType
-        );
+                extendsResourceType);
     }
 
     public static class Builder {
@@ -217,10 +236,16 @@ public class ProvidedResourceTypeCapability {
             return this;
         }
 
-
         public ProvidedResourceTypeCapability build() {
-            return new ProvidedResourceTypeCapability(resourceTypes, scriptEngine, scriptExtension, extendsResourceType, version,
-                    requestExtension, requestMethod, selectors);
+            return new ProvidedResourceTypeCapability(
+                    resourceTypes,
+                    scriptEngine,
+                    scriptExtension,
+                    extendsResourceType,
+                    version,
+                    requestExtension,
+                    requestMethod,
+                    selectors);
         }
     }
 }
