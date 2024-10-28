@@ -1,21 +1,21 @@
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~   http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sling.scriptingbundle.plugin.capability;
 
 import java.util.Map;
@@ -30,7 +30,8 @@ public class ProvidedScriptCapability {
     private final String scriptExtension;
     private final String scriptEngine;
 
-    private ProvidedScriptCapability(@NotNull String path, @NotNull String scriptExtension, @NotNull String scriptEngine) {
+    private ProvidedScriptCapability(
+            @NotNull String path, @NotNull String scriptExtension, @NotNull String scriptEngine) {
         this.path = path;
         this.scriptExtension = scriptExtension;
         this.scriptEngine = scriptEngine;
@@ -64,16 +65,18 @@ public class ProvidedScriptCapability {
         }
         if (obj instanceof ProvidedScriptCapability) {
             ProvidedScriptCapability other = (ProvidedScriptCapability) obj;
-            return Objects.equals(path, other.path) && Objects.equals(scriptExtension, other.scriptExtension) &&
-                    Objects.equals(scriptEngine, other.scriptEngine);
+            return Objects.equals(path, other.path)
+                    && Objects.equals(scriptExtension, other.scriptExtension)
+                    && Objects.equals(scriptEngine, other.scriptEngine);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return String.format("%s { path=%s; scriptExtension=%s; scriptEngine=%s }", ProvidedScriptCapability.class.getSimpleName(), path,
-                scriptExtension, scriptEngine);
+        return String.format(
+                "%s { path=%s; scriptExtension=%s; scriptEngine=%s }",
+                ProvidedScriptCapability.class.getSimpleName(), path, scriptExtension, scriptEngine);
     }
 
     public static class Builder {
@@ -92,8 +95,8 @@ public class ProvidedScriptCapability {
             String extension = path.substring(lastDotIndex + 1);
             String scriptEngine = scriptEngineMappings.get(extension);
             if (StringUtils.isEmpty(scriptEngine)) {
-                throw new IllegalStateException(String.format("Path %s does not seem to have an extension mapped to a script engine.",
-                        path));
+                throw new IllegalStateException(
+                        String.format("Path %s does not seem to have an extension mapped to a script engine.", path));
             }
             return new ProvidedScriptCapability(path, extension, scriptEngine);
         }
@@ -106,5 +109,4 @@ public class ProvidedScriptCapability {
             return this;
         }
     }
-
 }
