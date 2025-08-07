@@ -1,22 +1,24 @@
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~   http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sling.scriptingbundle.plugin.maven;
+
+import javax.script.ScriptEngineFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,8 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.script.ScriptEngineFactory;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.AbstractMojo;
@@ -52,8 +52,7 @@ import org.jetbrains.annotations.NotNull;
  * {@code org.apache.sling.scriptingbundle.maven.plugin.Provide-Capability} which can be used to generate the
  * corresponding OSGi bundle headers for bundles providing scripts executable by a {@link javax.script.ScriptEngine}.
  */
-@Mojo(name = "metadata",
-      defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
+@Mojo(name = "metadata", defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
 public class MetadataMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
@@ -186,28 +185,32 @@ public class MetadataMojo extends AbstractMojo {
             if (sourceDirectories.isEmpty()) {
                 sourceDirectories = new HashSet<>(Constants.DEFAULT_SOURCE_DIRECTORIES);
             }
-            sourceDirectories.stream().map(sourceDirectory -> {
-                Path sourceDirectoryPath = Paths.get(sourceDirectory);
-                if (!Files.exists(sourceDirectoryPath)) {
-                    sourceDirectoryPath = Paths.get(project.getBasedir().getAbsolutePath(), sourceDirectory);
-                }
-                return sourceDirectoryPath;
-            }).filter(sourceDirectory -> Files.exists(sourceDirectory) && Files.isDirectory(sourceDirectory)).forEach(sourceDirectoryPath -> {
-                DirectoryScanner scanner = getDirectoryScanner(sourceDirectoryPath.toFile());
-                Arrays.stream(scanner.getIncludedFiles()).map(sourceDirectoryPath::resolve).forEach(
-                        file -> {
-                            try {
-                                if (!Files.isDirectory(file)) {
-                                    Path workingCopy = workDirectory.resolve(sourceDirectoryPath.relativize(file));
-                                    Files.createDirectories(workingCopy.getParent());
-                                    Files.copy(file, workingCopy, StandardCopyOption.REPLACE_EXISTING);
-                                }
-                            } catch (IOException e) {
-                                logger.error("Cannot copy file into working directory.", e);
-                            }
+            sourceDirectories.stream()
+                    .map(sourceDirectory -> {
+                        Path sourceDirectoryPath = Paths.get(sourceDirectory);
+                        if (!Files.exists(sourceDirectoryPath)) {
+                            sourceDirectoryPath = Paths.get(project.getBasedir().getAbsolutePath(), sourceDirectory);
                         }
-                );
-            });
+                        return sourceDirectoryPath;
+                    })
+                    .filter(sourceDirectory -> Files.exists(sourceDirectory) && Files.isDirectory(sourceDirectory))
+                    .forEach(sourceDirectoryPath -> {
+                        DirectoryScanner scanner = getDirectoryScanner(sourceDirectoryPath.toFile());
+                        Arrays.stream(scanner.getIncludedFiles())
+                                .map(sourceDirectoryPath::resolve)
+                                .forEach(file -> {
+                                    try {
+                                        if (!Files.isDirectory(file)) {
+                                            Path workingCopy =
+                                                    workDirectory.resolve(sourceDirectoryPath.relativize(file));
+                                            Files.createDirectories(workingCopy.getParent());
+                                            Files.copy(file, workingCopy, StandardCopyOption.REPLACE_EXISTING);
+                                        }
+                                    } catch (IOException e) {
+                                        logger.error("Cannot copy file into working directory.", e);
+                                    }
+                                });
+                    });
             Map<String, String> mappings = new HashMap<>(Constants.DEFAULT_EXTENSION_TO_SCRIPT_ENGINE_MAPPING);
             if (scriptEngineMappings != null) {
                 mappings.putAll(scriptEngineMappings);
@@ -222,20 +225,25 @@ public class MetadataMojo extends AbstractMojo {
                 scannerPaths.add(FilenameUtils.getFullPath(file));
             }
             capabilities = Capabilities.fromFileSystemTree(
-                workDirectory,
-                scannerPaths.stream().map(workDirectory::resolve),
-                logger,
-                searchPaths,
-                scriptEngineMappings,
-                missingRequirementsOptional,
-                inContentPackage
-            );
+                    workDirectory,
+                    scannerPaths.stream().map(workDirectory::resolve),
+                    logger,
+                    searchPaths,
+                    scriptEngineMappings,
+                    missingRequirementsOptional,
+                    inContentPackage);
             String providedCapabilitiesDefinition = capabilities.getProvidedCapabilitiesString();
             String requiredCapabilitiesDefinition = capabilities.getRequiredCapabilitiesString();
-            project.getProperties().put("org.apache.sling.scriptingbundle.maven.plugin." + org.osgi.framework.Constants.PROVIDE_CAPABILITY,
-                    providedCapabilitiesDefinition);
-            project.getProperties().put("org.apache.sling.scriptingbundle.maven.plugin." + org.osgi.framework.Constants.REQUIRE_CAPABILITY,
-                    requiredCapabilitiesDefinition);
+            project.getProperties()
+                    .put(
+                            "org.apache.sling.scriptingbundle.maven.plugin."
+                                    + org.osgi.framework.Constants.PROVIDE_CAPABILITY,
+                            providedCapabilitiesDefinition);
+            project.getProperties()
+                    .put(
+                            "org.apache.sling.scriptingbundle.maven.plugin."
+                                    + org.osgi.framework.Constants.REQUIRE_CAPABILITY,
+                            requiredCapabilitiesDefinition);
         } catch (IOException e) {
             logger.error("Unable to generate working directory.", e);
         }
@@ -266,5 +274,4 @@ public class MetadataMojo extends AbstractMojo {
     Map<String, String> getScriptEngineMappings() {
         return scriptEngineMappings;
     }
-
 }

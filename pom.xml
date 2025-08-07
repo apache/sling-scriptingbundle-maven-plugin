@@ -18,14 +18,14 @@
   ~ under the License.
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling</artifactId>
-        <version>46</version>
+        <version>60</version>
         <relativePath />
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>scriptingbundle-maven-plugin</artifactId>
     <version>0.5.3-SNAPSHOT</version>
@@ -37,99 +37,32 @@
         which can be used to populate the Provide-Capability and Require-Capability bundle headers.</description>
     <url>https://sling.apache.org/components/scriptingbundle-maven-plugin/</url>
 
+    <prerequisites>
+        <maven>${maven.version}</maven>
+    </prerequisites>
+
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-scriptingbundle-maven-plugin.git</developerConnection>
-        <url>https://github.com/apache/sling-scriptingbundle-maven-plugin/tree/${project.scm.tag}</url>
         <tag>HEAD</tag>
+        <url>https://github.com/apache/sling-scriptingbundle-maven-plugin/tree/${project.scm.tag}</url>
     </scm>
+
+    <distributionManagement>
+        <site>
+            <id>staging</id>
+            <url>file:${project.build.directory}/staging</url>
+        </site>
+    </distributionManagement>
 
     <properties>
         <sling.java.version>8</sling.java.version>
-        <maven.version>3.6.0</maven.version>
+        <maven.version>3.8.8</maven.version>
         <site.jira.version.id>12344664,12347157,12348422,12350010,12350474,12350606</site.jira.version.id>
         <maven.site.path>${project.artifactId}-archives/${project.artifactId}-LATEST</maven.site.path>
         <project.build.outputTimestamp>2021-12-16T14:04:46Z</project.build.outputTimestamp>
         <github.project.id>apache/sling-scriptingbundle-maven-plugin</github.project.id>
     </properties>
-
-    <prerequisites>
-        <maven>${maven.version}</maven>
-    </prerequisites>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-plugin-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>mojo-descriptor</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>descriptor</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>generated-helpmojo</id>
-                        <goals>
-                            <goal>helpmojo</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.rat</groupId>
-                <artifactId>apache-rat-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/*.iml</exclude>
-                        <exclude>**/target/**/*</exclude>
-                        <exclude>src/site/markdown/**</exclude>
-                        <exclude>src/test/resources/**/extends</exclude>
-                        <exclude>src/test/resources/**/requires</exclude>
-                        <exclude>src/test/resources/**/wrongbar</exclude>
-                        <exclude>src/test/resources/extends/*</exclude>
-                        <exclude>src/test/resources/requires/*</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-scm-publish-plugin</artifactId>
-                <configuration>
-                    <checkoutDirectory>${user.home}/maven-sites/${maven.site.path}</checkoutDirectory>
-                    <tryUpdate>true</tryUpdate>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.3.0</version>
-                <configuration>
-                    <effort>Max</effort>
-                    <xmlOutput>true</xmlOutput>
-                    <excludeFilterFile>src/test/resources/spotbugs-exclude.xml</excludeFilterFile>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>find-bugs</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 
     <!-- force maven-plugin-testing-harness to use newer plexus container (https://issues.apache.org/jira/browse/MPLUGINTESTING-53) -->
     <dependencyManagement>
@@ -157,7 +90,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
-                <artifactId>maven-aether-provider</artifactId>
+                <artifactId>maven-artifact</artifactId>
                 <version>${maven.version}</version>
             </dependency>
         </dependencies>
@@ -167,23 +100,33 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-model</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-compat</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-artifact</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
@@ -200,8 +143,8 @@
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.scripting.spi</artifactId>
-            <scope>compile</scope>
             <version>1.0.2</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
@@ -249,6 +192,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.16.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.maven.plugin-testing</groupId>
             <artifactId>maven-plugin-testing-harness</artifactId>
             <version>3.3.0</version>
@@ -266,6 +215,80 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <configuration>
+                    <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>mojo-descriptor</id>
+                        <goals>
+                            <goal>descriptor</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                    <execution>
+                        <id>generated-helpmojo</id>
+                        <goals>
+                            <goal>helpmojo</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*.iml</exclude>
+                        <exclude>**/target/**/*</exclude>
+                        <exclude>src/site/markdown/**</exclude>
+                        <exclude>src/test/resources/**/extends</exclude>
+                        <exclude>src/test/resources/**/requires</exclude>
+                        <exclude>src/test/resources/**/wrongbar</exclude>
+                        <exclude>src/test/resources/extends/*</exclude>
+                        <exclude>src/test/resources/requires/*</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-publish-plugin</artifactId>
+                <configuration>
+                    <checkoutDirectory>${user.home}/maven-sites/${maven.site.path}</checkoutDirectory>
+                    <tryUpdate>true</tryUpdate>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.3.0</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <xmlOutput>true</xmlOutput>
+                    <excludeFilterFile>src/test/resources/spotbugs-exclude.xml</excludeFilterFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>find-bugs</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
     <reporting>
         <plugins>
@@ -285,12 +308,5 @@
             </plugin>
         </plugins>
     </reporting>
-
-    <distributionManagement>
-        <site>
-            <id>staging</id>
-            <url>file:${project.build.directory}/staging</url>
-        </site>
-    </distributionManagement>
 
 </project>
