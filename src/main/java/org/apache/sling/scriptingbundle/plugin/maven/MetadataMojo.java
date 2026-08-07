@@ -210,7 +210,10 @@ public class MetadataMojo extends AbstractMojo {
                             try {
                                 if (!Files.isDirectory(file)) {
                                     Path workingCopy = workDirectory.resolve(sourceDirectoryPath.relativize(file));
-                                    Files.createDirectories(workingCopy.getParent());
+                                    Path parentDir = workingCopy.getParent();
+                                    if (parentDir != null) {
+                                        Files.createDirectories(parentDir);
+                                    }
                                     Files.copy(file, workingCopy, StandardCopyOption.REPLACE_EXISTING);
                                 }
                             } catch (IOException e) {

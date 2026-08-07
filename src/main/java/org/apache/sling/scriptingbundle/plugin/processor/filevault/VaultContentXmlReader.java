@@ -47,7 +47,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-public class VaultContentXmlReader {
+public final class VaultContentXmlReader {
 
     private static final DocumentBuilderFactory documentBuilderFactory;
 
