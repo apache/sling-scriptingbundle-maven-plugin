@@ -16,4 +16,5 @@
 # under the License.
 -plugin:    org.apache.sling.scriptingbundle.plugin.bnd.BundledScriptsScannerPlugin; \
             scriptEngineMappings="html:thymeleaf,js:rhino"; \
-            searchPaths=/bin
+            searchPaths=/bin; \
+            serviceRanking=100
