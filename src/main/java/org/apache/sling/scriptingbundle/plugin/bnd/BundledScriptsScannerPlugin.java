@@ -113,6 +113,11 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
             requiredCapabilities = requiredCapabilitiesDefinition;
         }
         analyzer.set(aQute.bnd.osgi.Constants.REQUIRE_CAPABILITY, requiredCapabilities);
+
+        Integer serviceRanking = getConfiguredServiceRanking();
+        if (serviceRanking != null) {
+            analyzer.set(Constants.SLING_BUNDLED_SCRIPTS_RANKING_HEADER, serviceRanking.toString());
+        }
         return false;
     }
 
@@ -196,6 +201,18 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
             return !"false".equals(missingRequirementsOptionalString);
         }
         return true;
+    }
+
+    private Integer getConfiguredServiceRanking() {
+        String serviceRankingString = pluginProperties.get(Constants.BND_SERVICE_RANKING);
+        if (StringUtils.isNotEmpty(serviceRankingString)) {
+            try {
+                return Integer.valueOf(serviceRankingString.trim());
+            } catch (NumberFormatException e) {
+                logger.error(String.format("Invalid service ranking: %s.", serviceRankingString));
+            }
+        }
+        return null;
     }
 
     private Stream<Path> walkPath(Path path, Set<PathMatcher> includes, Set<PathMatcher> excludes) throws IOException {

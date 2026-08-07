@@ -13,4 +13,7 @@ Sling application. When executed, the plugin will define two project properties
 `org.apache.sling.scriptingbundle.maven.plugin.Provide-Capability`) which can be used to
 populate the corresponding bundle headers.
 
+An optional `serviceRanking` can be configured to apply a service ranking to all bundled
+scripts in the bundle via the `Sling-Bundled-Scripts-Ranking` bundle header.
+
 For more details head over to the documentation page from https://sling.apache.org/components/scriptingbundle-maven-plugin/.

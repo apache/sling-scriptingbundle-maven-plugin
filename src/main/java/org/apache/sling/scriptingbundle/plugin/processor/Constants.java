@@ -53,7 +53,9 @@ public final class Constants {
     public static final String BND_SCRIPT_ENGINE_MAPPINGS = "scriptEngineMappings";
     public static final String BND_SEARCH_PATHS = "searchPaths";
     public static final String BND_MISSING_REQUIREMENTS_OPTIONAL = "missingRequirementsOptional";
+    public static final String BND_SERVICE_RANKING = "serviceRanking";
 
+    public static final String SLING_BUNDLED_SCRIPTS_RANKING_HEADER = "Sling-Bundled-Scripts-Ranking";
     public static final String SLING_RESOURCE_SUPER_TYPE_XML_LOCAL_NAME = "resourceSuperType";
     public static final String SLING_REQUIRED_RESOURCE_TYPES = "sling:requiredResourceTypes";
     public static final String SLING_REQUIRED_RESOURCE_TYPES_XML_LOCAL_NAME = "requiredResourceTypes";

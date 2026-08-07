@@ -175,6 +175,17 @@ public class MetadataMojo extends AbstractMojo {
     @Parameter(property = "scriptingbundle.missingRequirementsOptional", defaultValue = "true")
     private boolean missingRequirementsOptional = true;
 
+    /**
+     * When set, the given numeric value is exposed via the {@code org.apache.sling.scriptingbundle.maven.plugin.Sling-Bundled-Scripts-Ranking}
+     * Maven project property, which can be used to generate the {@code Sling-Bundled-Scripts-Ranking} OSGi bundle header. That header
+     * applies globally to all scripts in the bundle and allows influencing the service ranking of the servlets registered for the
+     * bundled scripts. When not set, the property is not generated.
+     *
+     * @since 0.6.0
+     */
+    @Parameter(property = "scriptingbundle.serviceRanking")
+    private Integer serviceRanking;
+
     private Capabilities capabilities;
 
     public void execute() {
@@ -236,6 +247,10 @@ public class MetadataMojo extends AbstractMojo {
                     providedCapabilitiesDefinition);
             project.getProperties().put("org.apache.sling.scriptingbundle.maven.plugin." + org.osgi.framework.Constants.REQUIRE_CAPABILITY,
                     requiredCapabilitiesDefinition);
+            if (serviceRanking != null) {
+                project.getProperties().put("org.apache.sling.scriptingbundle.maven.plugin." + Constants.SLING_BUNDLED_SCRIPTS_RANKING_HEADER,
+                        serviceRanking.toString());
+            }
         } catch (IOException e) {
             logger.error("Unable to generate working directory.", e);
         }

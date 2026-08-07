@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.function.Function;
 import java.util.jar.Manifest;
 
 import org.apache.commons.io.FileUtils;
@@ -66,8 +67,9 @@ public class BundledScriptsScannerPluginTest extends AbstractPluginTest {
         try (Builder builder = prepareBuilder(projectName)) {
             BundledScriptsScannerPlugin plugin = builder.getPlugin(BundledScriptsScannerPlugin.class);
             assertNotNull(plugin);
-            builder.build();
-            return new PluginExecution(plugin.getCapabilities(), plugin.getScriptEngineMappings());
+            Jar jar = builder.build();
+            Function<String, String> headerGetter = jar.getManifest().getMainAttributes()::getValue;
+            return new PluginExecution(plugin.getCapabilities(), plugin.getScriptEngineMappings(), headerGetter);
         }
     }
 

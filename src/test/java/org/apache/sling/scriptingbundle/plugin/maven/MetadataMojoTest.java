@@ -20,9 +20,7 @@ package org.apache.sling.scriptingbundle.plugin.maven;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.function.Function;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
@@ -68,7 +66,9 @@ public class MetadataMojoTest extends AbstractPluginTest {
     public PluginExecution executePluginOnProject(String projectName) throws Exception {
         MojoProject mojoProject = getMojoProject(projectName);
         mojoProject.mojo.execute();
-        return new PluginExecution(mojoProject.mojo.getCapabilities(), mojoProject.mojo.getScriptEngineMappings());
+        Function<String, String> propertyGetter = key -> mojoProject.project.getProperties()
+                        .getProperty("org.apache.sling.scriptingbundle.maven.plugin." + key);
+        return new PluginExecution(mojoProject.mojo.getCapabilities(), mojoProject.mojo.getScriptEngineMappings(), propertyGetter);
     }
 
     @Override

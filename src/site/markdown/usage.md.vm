@@ -111,3 +111,17 @@ writing instructions of another plugin like the `maven-bundle-plugin`:
 The `osgi.extender` requirement is mandatory to have the bundle wired up to the Apache Sling Servlets Resolver, but this should be manually
 defined by the developers, so that their bundle is correctly wired up to whatever version of the Servlets Resolver is available on the
 destination platform.
+
+$h3 Setting a service ranking for the bundled scripts
+
+Starting with version 0.6.0, a numeric `serviceRanking` can be configured. It is applied globally to all scripts in the bundle and
+influences the service ranking of the servlets that the Apache Sling Servlets Resolver registers for the bundled scripts. When used as a
+bnd plugin, the ranking is written directly into the `Sling-Bundled-Scripts-Ranking` bundle header. When used as a Maven plugin, the value
+is exposed via the `org.apache.sling.scriptingbundle.maven.plugin.Sling-Bundled-Scripts-Ranking` project property, which has to be added
+to the manifest writing instructions of the plugin that generates the bundle, e.g.:
+
+```
+<Sling-Bundled-Scripts-Ranking>
+    ${org.apache.sling.scriptingbundle.maven.plugin.Sling-Bundled-Scripts-Ranking}
+</Sling-Bundled-Scripts-Ranking>
+```

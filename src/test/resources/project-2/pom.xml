@@ -40,6 +40,7 @@
                         <html>thymeleaf</html>
                         <js>rhino</js>
                     </scriptEngineMappings>
+                    <serviceRanking>100</serviceRanking>
                 </configuration>
                 <executions>
                     <execution>

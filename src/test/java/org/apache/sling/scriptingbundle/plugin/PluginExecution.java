@@ -19,17 +19,20 @@
 package org.apache.sling.scriptingbundle.plugin;
 
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.sling.scriptingbundle.plugin.capability.Capabilities;
 
 public class PluginExecution {
     private final Capabilities capabilities;
     private final Map<String, String> scriptEngineMappings;
+    private final Function<String, String> valueGetter;
 
-    public PluginExecution(Capabilities capabilities, Map<String, String> scriptEngineMappings) {
+    public PluginExecution(Capabilities capabilities, Map<String, String> scriptEngineMappings, Function<String, String> valueGetter) {
         super();
         this.capabilities = capabilities;
         this.scriptEngineMappings = scriptEngineMappings;
+        this.valueGetter = valueGetter;
     }
 
     public Capabilities getCapabilities() {
@@ -40,4 +43,7 @@ public class PluginExecution {
         return scriptEngineMappings;
     }
 
+    public String getHeaderValue(String key) {
+        return valueGetter.apply(key);
+    }
 }

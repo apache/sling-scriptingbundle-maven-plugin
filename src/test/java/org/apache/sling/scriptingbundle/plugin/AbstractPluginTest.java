@@ -19,6 +19,7 @@
 package org.apache.sling.scriptingbundle.plugin;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
@@ -31,6 +32,7 @@ import org.apache.sling.scriptingbundle.plugin.capability.Capabilities;
 import org.apache.sling.scriptingbundle.plugin.capability.ProvidedResourceTypeCapability;
 import org.apache.sling.scriptingbundle.plugin.capability.ProvidedScriptCapability;
 import org.apache.sling.scriptingbundle.plugin.capability.RequiredResourceTypeCapability;
+import org.apache.sling.scriptingbundle.plugin.processor.Constants;
 import org.junit.Test;
 import org.osgi.framework.Version;
 import org.osgi.framework.VersionRange;
@@ -158,6 +160,7 @@ public abstract class AbstractPluginTest {
             PluginExecution execution = executePluginOnProject("project-2");
             Capabilities capabilities = execution.getCapabilities();
             Map<String, String> scriptEngineMappings = execution.getScriptEngineMappings();
+            assertEquals("100", execution.getHeaderValue(Constants.SLING_BUNDLED_SCRIPTS_RANKING_HEADER));
             Set<ProvidedResourceTypeCapability> pExpected = new HashSet<>(Arrays.asList(
                     ProvidedResourceTypeCapability.builder().withResourceType("libs/sling/test").withScriptEngine("thymeleaf")
                             .withScriptExtension("html").build(),
