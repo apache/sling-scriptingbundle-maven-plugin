@@ -1,21 +1,21 @@
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~   http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sling.scriptingbundle.plugin.capability;
 
 import java.util.List;
@@ -33,7 +33,8 @@ public class RequiredResourceTypeCapability {
     private final VersionRange versionRange;
     private final boolean isOptional;
 
-    private RequiredResourceTypeCapability(@NotNull String resourceType, @Nullable VersionRange versionRange, boolean isOptional) {
+    private RequiredResourceTypeCapability(
+            @NotNull String resourceType, @Nullable VersionRange versionRange, boolean isOptional) {
         this.resourceType = resourceType;
         this.versionRange = versionRange;
         this.isOptional = isOptional;
@@ -78,8 +79,9 @@ public class RequiredResourceTypeCapability {
 
     @Override
     public String toString() {
-        return String.format("%s{resourceType=%s, versionRange=%s, isOptional=%s}", this.getClass().getSimpleName(),
-                resourceType, versionRange, isOptional);
+        return String.format(
+                "%s{resourceType=%s, versionRange=%s, isOptional=%s}",
+                this.getClass().getSimpleName(), resourceType, versionRange, isOptional);
     }
 
     @Override
@@ -94,7 +96,9 @@ public class RequiredResourceTypeCapability {
         }
         if (obj instanceof RequiredResourceTypeCapability) {
             RequiredResourceTypeCapability other = (RequiredResourceTypeCapability) obj;
-            return Objects.equals(resourceType, other.resourceType) && Objects.equals(versionRange, other.versionRange) && Objects.equals(isOptional, other.isOptional);
+            return Objects.equals(resourceType, other.resourceType)
+                    && Objects.equals(versionRange, other.versionRange)
+                    && Objects.equals(isOptional, other.isOptional);
         }
         return false;
     }
@@ -125,6 +129,5 @@ public class RequiredResourceTypeCapability {
             this.isOptional = true;
             return this;
         }
-     }
-
+    }
 }
