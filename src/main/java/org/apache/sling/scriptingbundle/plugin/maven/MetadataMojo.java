@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.script.ScriptEngineFactory;
@@ -199,7 +200,10 @@ public class MetadataMojo extends AbstractMojo {
                             try {
                                 if (!Files.isDirectory(file)) {
                                     Path workingCopy = workDirectory.resolve(sourceDirectoryPath.relativize(file));
-                                    Files.createDirectories(workingCopy.getParent());
+                                    Path parent = workingCopy.getParent();
+                                    if (parent != null) {
+                                        Files.createDirectories(parent);
+                                    }
                                     Files.copy(file, workingCopy, StandardCopyOption.REPLACE_EXISTING);
                                 }
                             } catch (IOException e) {

@@ -79,7 +79,10 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
                         try {
                             if (!Files.isDirectory(file)) {
                                 Path workingCopy = Paths.get(workDirectory.toString(), sourceDirectoryPath.relativize(file).toString());
-                                Files.createDirectories(workingCopy.getParent());
+                                Path parent = workingCopy.getParent();
+                                if (parent != null) {
+                                    Files.createDirectories(parent);
+                                }
                                 Files.copy(file, workingCopy, StandardCopyOption.REPLACE_EXISTING);
                             }
                         } catch (IOException e) {
