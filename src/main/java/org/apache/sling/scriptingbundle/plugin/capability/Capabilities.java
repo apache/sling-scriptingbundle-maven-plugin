@@ -38,6 +38,7 @@ import org.osgi.framework.VersionRange;
 
 import aQute.bnd.header.Attrs;
 import aQute.bnd.header.Parameters;
+import aQute.bnd.osgi.resource.CapReqBuilder;
 
 public class Capabilities {
 
@@ -71,7 +72,12 @@ public class Capabilities {
         Parameters parameters = new Parameters();
         for (ProvidedResourceTypeCapability capability : getProvidedResourceTypeCapabilities()) {
             Attrs attributes = new Attrs();
-            attributes.putTyped(Constants.CAPABILITY_RESOURCE_TYPE_AT, capability.getResourceTypes());
+            // Escape special characters in resource types
+            Set<String> escapedResourceTypes = new LinkedHashSet<>();
+            for (String resourceType : capability.getResourceTypes()) {
+                escapedResourceTypes.add(CapReqBuilder.escapeFilterValue(resourceType));
+            }
+            attributes.putTyped(Constants.CAPABILITY_RESOURCE_TYPE_AT, escapedResourceTypes);
             Optional.ofNullable(capability.getScriptEngine()).ifPresent(scriptEngine ->
                     attributes.put(Constants.CAPABILITY_SCRIPT_ENGINE_AT, scriptEngine)
             );
@@ -82,7 +88,8 @@ public class Capabilities {
                     attributes.putTyped(Constants.CAPABILITY_VERSION_AT, new aQute.bnd.version.Version(version.toString()))
             );
             Optional.ofNullable(capability.getExtendsResourceType()).ifPresent(extendedResourceType ->
-                    attributes.put(Constants.CAPABILITY_EXTENDS_AT, extendedResourceType)
+                    // Escape special characters in extended resource type
+                    attributes.put(Constants.CAPABILITY_EXTENDS_AT, CapReqBuilder.escapeFilterValue(extendedResourceType))
             );
             Optional.ofNullable(capability.getRequestMethod()).ifPresent(method ->
                     attributes.put(Constants.CAPABILITY_METHODS_AT, method)
@@ -98,7 +105,8 @@ public class Capabilities {
 
         for (ProvidedScriptCapability scriptCapability : getProvidedScriptCapabilities()) {
             Attrs attributes = new Attrs();
-            attributes.put(Constants.CAPABILITY_PATH_AT, scriptCapability.getPath());
+            // Escape special characters in path (this is where footer(v2) gets escaped!)
+            attributes.put(Constants.CAPABILITY_PATH_AT, CapReqBuilder.escapeFilterValue(scriptCapability.getPath()));
             attributes.put(Constants.CAPABILITY_SCRIPT_ENGINE_AT, scriptCapability.getScriptEngine());
             attributes.put(Constants.CAPABILITY_SCRIPT_EXTENSION_AT, scriptCapability.getScriptExtension());
             parameters.add(Constants.CAPABILITY_NS, attributes);
@@ -111,13 +119,16 @@ public class Capabilities {
         for (RequiredResourceTypeCapability capability : getRequiredResourceTypeCapabilities()) {
             Attrs attributes = new Attrs();
 
+            // Escape special characters in resource type for use in filter string
+            String escapedResourceType = CapReqBuilder.escapeFilterValue(capability.getResourceType());
+            
             StringBuilder filterValue = new StringBuilder("(&(!(" + ServletResolverConstants.SLING_SERVLET_SELECTORS + "=*))");
             VersionRange versionRange = capability.getVersionRange();
             if (versionRange != null) {
                 filterValue.append("(&").append(versionRange.toFilterString("version")).append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append(
-                        "=").append(capability.getResourceType()).append(")))");
+                        "=").append(escapedResourceType).append(")))");
             } else {
-                filterValue.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(capability.getResourceType()).append("))");
+                filterValue.append("(").append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(escapedResourceType).append("))");
             }
             
             attributes.put(aQute.bnd.osgi.Constants.FILTER_DIRECTIVE, filterValue.toString());
