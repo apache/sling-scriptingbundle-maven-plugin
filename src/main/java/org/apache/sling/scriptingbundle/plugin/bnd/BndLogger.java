@@ -18,7 +18,7 @@
  */
 package org.apache.sling.scriptingbundle.plugin.bnd;
 
-import aQute.lib.exceptions.Exceptions;
+import aQute.bnd.exceptions.Exceptions;
 import aQute.service.reporter.Reporter;
 import org.apache.sling.scriptingbundle.plugin.processor.Logger;
 import org.jetbrains.annotations.NotNull;

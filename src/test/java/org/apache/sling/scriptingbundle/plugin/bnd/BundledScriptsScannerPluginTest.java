@@ -20,24 +20,66 @@ package org.apache.sling.scriptingbundle.plugin.bnd;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.jar.Manifest;
+import java.util.stream.Stream;
 
 import aQute.bnd.osgi.Builder;
 import aQute.bnd.osgi.Jar;
-import org.apache.commons.io.FileUtils;
 import org.apache.sling.scriptingbundle.plugin.AbstractPluginTest;
-import org.apache.sling.scriptingbundle.plugin.PluginExecution;
+import org.apache.sling.scriptingbundle.plugin.capability.Capabilities;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.Assert.assertNotNull;
+import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-public class BundledScriptsScannerPluginTest extends AbstractPluginTest {
+class BundledScriptsScannerPluginTest extends AbstractPluginTest {
 
-    public Builder prepareBuilder(String projectName) throws IOException {
-        Path projectRootFolder = Paths.get("src", "test", "resources", projectName);
-        Path projectTargetFolder = projectRootFolder.resolve("target");
+    interface Verifications {
+        void verify(Capabilities capabilities, Map<String, String> scriptEngineMappings);
+    }
+
+    static Stream<Arguments> projects() {
+        return Stream.of(
+                arguments("project-1", (Verifications) AbstractPluginTest::assertTestProject1, null),
+                arguments("project-2", (Verifications) AbstractPluginTest::assertTestProject2, null),
+                arguments("project-3", (Verifications) AbstractPluginTest::assertTestProject3, null),
+                arguments("project-4", (Verifications) AbstractPluginTest::assertTestProject4, null),
+                arguments("filevault-1", (Verifications) AbstractPluginTest::assertTestFileVault1, (Consumer<Builder>)
+                        b -> b.set("project.packaging", "content-package")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("projects")
+    void testProject(String projectName, Verifications verifications, Consumer<Builder> builderCallback)
+            throws Exception {
+        URL url = getClass().getClassLoader().getResource(projectName);
+        Path projectRootFolder = Paths.get(requireNonNull(url).toURI());
+        assertTrue(Files.exists(projectRootFolder));
+        Path projectWorkFolder = projectRootFolder.resolve("target");
+        try (Builder builder = prepareBuilder(projectRootFolder, projectWorkFolder)) {
+            if (builderCallback != null) {
+                builderCallback.accept(builder);
+            }
+            BundledScriptsScannerPlugin plugin = builder.getPlugin(BundledScriptsScannerPlugin.class);
+            assertNotNull(plugin);
+            builder.build();
+            verifications.verify(plugin.getCapabilities(), plugin.getScriptEngineMappings());
+        } finally {
+            cleanUp(projectWorkFolder);
+        }
+    }
+
+    public Builder prepareBuilder(Path projectRootFolder, Path projectTargetFolder) throws IOException {
         Path projectClassesFolder = projectTargetFolder.resolve("classes");
         Files.createDirectories(projectClassesFolder);
         Builder builder = new Builder();
@@ -48,25 +90,6 @@ public class BundledScriptsScannerPluginTest extends AbstractPluginTest {
         builder.setProperties(bndFile.getParentFile(), builder.loadProperties(bndFile));
         builder.set(BundledScriptsScannerPlugin.PROJECT_ROOT_FOLDER, projectRootFolder.toString());
         builder.set(BundledScriptsScannerPlugin.PROJECT_BUILD_FOLDER, projectTargetFolder.toString());
-        if (FILEVAULT_PROJECTS.contains(projectName)) {
-            builder.set("project.packaging", "content-package");
-        }
         return builder;
-    }
-
-    @Override
-    public void cleanUp(String projectName) throws IOException {
-        Path projectTargetFolder = Paths.get("src", "test", "resources", "bnd", projectName, "target");
-        FileUtils.forceDeleteOnExit(projectTargetFolder.toFile());
-    }
-
-    @Override
-    public PluginExecution executePluginOnProject(String projectName) throws Exception {
-        try (Builder builder = prepareBuilder(projectName)) {
-            BundledScriptsScannerPlugin plugin = builder.getPlugin(BundledScriptsScannerPlugin.class);
-            assertNotNull(plugin);
-            builder.build();
-            return new PluginExecution(plugin.getCapabilities(), plugin.getScriptEngineMappings());
-        }
     }
 }

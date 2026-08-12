@@ -18,60 +18,70 @@
  */
 package org.apache.sling.scriptingbundle.plugin.maven;
 
-import java.io.File;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.file.Path;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.MojoExecution;
-import org.apache.maven.plugin.testing.MojoRule;
+import com.google.inject.Inject;
+import org.apache.maven.api.plugin.testing.Basedir;
+import org.apache.maven.api.plugin.testing.InjectMojo;
+import org.apache.maven.api.plugin.testing.MojoTest;
 import org.apache.maven.project.MavenProject;
 import org.apache.sling.scriptingbundle.plugin.AbstractPluginTest;
-import org.apache.sling.scriptingbundle.plugin.PluginExecution;
-import org.junit.After;
-import org.junit.Rule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
-public class MetadataMojoTest extends AbstractPluginTest {
+import static org.mockito.Mockito.when;
 
-    @Rule
-    public MojoRule mojoRule = new MojoRule();
+@MojoTest
+class MetadataMojoTest extends AbstractPluginTest {
 
-    @After
-    public void after() {
-        System.clearProperty("basedir");
+    @Inject
+    MavenProject mavenProject;
+
+    @Test
+    @Basedir("/project-1")
+    @InjectMojo(goal = "metadata")
+    void testProject1(MetadataMojo mojo) {
+        mojo.execute();
+        assertTestProject1(mojo.getCapabilities(), mojo.getScriptEngineMappings());
     }
 
-    private MojoProject getMojoProject(String projectName) throws Exception {
-        File projectDirectory =
-                Paths.get("src", "test", "resources", projectName).toFile();
-        MavenProject project = mojoRule.readMavenProject(projectDirectory);
-        MavenSession session = mojoRule.newMavenSession(project);
-        if (FILEVAULT_PROJECTS.contains(projectName)) {
-            project.setPackaging("content-package");
-        }
-        MojoExecution execution = mojoRule.newMojoExecution("metadata");
-        MetadataMojo validateMojo = (MetadataMojo) mojoRule.lookupConfiguredMojo(session, execution);
-        MojoProject mojoProject = new MojoProject();
-        mojoProject.mojo = validateMojo;
-        mojoProject.project = project;
-        return mojoProject;
+    @Test
+    @Basedir("/project-2")
+    @InjectMojo(goal = "metadata")
+    void testProject2(MetadataMojo mojo) {
+        mojo.execute();
+        assertTestProject2(mojo.getCapabilities(), mojo.getScriptEngineMappings());
     }
 
-    private static class MojoProject {
-        MetadataMojo mojo;
-        MavenProject project;
+    @Test
+    @Basedir("/project-3")
+    @InjectMojo(goal = "metadata")
+    void testProject3(MetadataMojo mojo) {
+        mojo.execute();
+        assertTestProject3(mojo.getCapabilities(), mojo.getScriptEngineMappings());
     }
 
-    @Override
-    public PluginExecution executePluginOnProject(String projectName) throws Exception {
-        MojoProject mojoProject = getMojoProject(projectName);
-        mojoProject.mojo.execute();
-        return new PluginExecution(mojoProject.mojo.getCapabilities(), mojoProject.mojo.getScriptEngineMappings());
+    @Test
+    @Basedir("/project-4")
+    @InjectMojo(goal = "metadata")
+    void testProject4(MetadataMojo mojo) {
+        mojo.execute();
+        assertTestProject4(mojo.getCapabilities(), mojo.getScriptEngineMappings());
     }
 
-    @Override
-    public void cleanUp(String projectName) throws Exception {
-        MojoProject mojoProject = getMojoProject(projectName);
-        FileUtils.forceDeleteOnExit(new File(mojoProject.project.getBuild().getDirectory()));
+    @Test
+    @Basedir("/filevault-1")
+    @InjectMojo(goal = "metadata")
+    void testFileVault1(MetadataMojo mojo) {
+        when(mavenProject.getPackaging()).thenReturn("content-package");
+        mojo.execute();
+        assertTestFileVault1(mojo.getCapabilities(), mojo.getScriptEngineMappings());
+    }
+
+    @AfterEach
+    void cleanUp() throws IOException {
+        Path workDir = mavenProject.getBasedir().toPath().resolve("target");
+        cleanUp(workDir);
     }
 }

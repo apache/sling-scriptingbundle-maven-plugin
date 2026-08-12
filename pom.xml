@@ -38,7 +38,7 @@
     <url>https://sling.apache.org/components/scriptingbundle-maven-plugin/</url>
 
     <prerequisites>
-        <maven>${maven.version}</maven>
+        <maven>3.6.0</maven>
     </prerequisites>
 
     <scm>
@@ -56,8 +56,8 @@
     </distributionManagement>
 
     <properties>
-        <sling.java.version>8</sling.java.version>
-        <maven.version>3.6.0</maven.version>
+        <sling.java.version>11</sling.java.version>
+        <maven.version>3.9.16</maven.version>
         <site.jira.version.id>12344664,12347157,12348422,12350010,12350474,12350606</site.jira.version.id>
         <maven.site.path>${project.artifactId}-archives/${project.artifactId}-LATEST</maven.site.path>
         <project.build.outputTimestamp>2021-12-16T14:04:46Z</project.build.outputTimestamp>
@@ -136,7 +136,7 @@
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.4</version>
+            <version>3.15.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -148,13 +148,13 @@
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.scripting.spi</artifactId>
-            <version>1.0.2</version>
+            <version>2.0.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.api</artifactId>
-            <version>2.22.0</version>
+            <version>3.0.2</version>
             <scope>compile</scope>
         </dependency>
         <!-- due to dependency mediation (https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#transitive-dependencies) 
@@ -162,14 +162,14 @@
         <dependency>
             <groupId>biz.aQute.bnd</groupId>
             <artifactId>biz.aQute.bndlib</artifactId>
-            <version>4.3.0</version>
+            <version>7.3.0</version>
             <scope>compile</scope>
         </dependency>
         <!-- FileVault -->
         <dependency>
             <groupId>org.apache.jackrabbit.vault</groupId>
             <artifactId>org.apache.jackrabbit.vault</artifactId>
-            <version>3.5.0</version>
+            <version>4.2.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -181,25 +181,59 @@
         <dependency>
             <groupId>org.apache.jackrabbit</groupId>
             <artifactId>oak-jackrabbit-api</artifactId>
-            <version>1.40.0</version>
+            <version>2.4.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jackrabbit</groupId>
+            <artifactId>jackrabbit-jcr-commons</artifactId>
+            <version>2.22.4</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.jackrabbit</groupId>
             <artifactId>jackrabbit-spi-commons</artifactId>
-            <version>2.20.2</version>
+            <version>2.22.4</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.jcr.resource</artifactId>
-            <version>3.0.22</version>
+            <version>3.3.6</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.22.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.20.0</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-testing</groupId>
             <artifactId>maven-plugin-testing-harness</artifactId>
-            <version>3.3.0</version>
+            <version>3.5.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -220,17 +254,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
-                <configuration>
-                    <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
-                </configuration>
                 <executions>
-                    <execution>
-                        <id>mojo-descriptor</id>
-                        <goals>
-                            <goal>descriptor</goal>
-                        </goals>
-                        <phase>process-classes</phase>
-                    </execution>
                     <execution>
                         <id>generated-helpmojo</id>
                         <goals>

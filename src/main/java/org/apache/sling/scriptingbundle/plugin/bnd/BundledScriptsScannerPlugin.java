@@ -98,14 +98,18 @@ public class BundledScriptsScannerPlugin implements AnalyzerPlugin, Plugin {
                     }
                 });
         scriptEngineMappings = getConfiguredScriptEngineMappings();
-        capabilities = Capabilities.fromFileSystemTree(
-                workDirectory,
-                walkPath(workDirectory, includes, excludes),
-                logger,
-                getConfiguredSearchPaths(),
-                scriptEngineMappings,
-                getMissingRequirementsOptional(),
-                inContentPackage);
+
+        try (Stream<Path> files = walkPath(workDirectory, includes, excludes)) {
+            capabilities = Capabilities.fromFileSystemTree(
+                    workDirectory,
+                    files,
+                    logger,
+                    getConfiguredSearchPaths(),
+                    scriptEngineMappings,
+                    getMissingRequirementsOptional(),
+                    inContentPackage);
+        }
+
         String providedCapabilitiesDefinition = capabilities.getProvidedCapabilitiesString();
         String requiredCapabilitiesDefinition = capabilities.getRequiredCapabilitiesString();
 
