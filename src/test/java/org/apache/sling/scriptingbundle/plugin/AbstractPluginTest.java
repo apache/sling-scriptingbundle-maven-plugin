@@ -243,22 +243,20 @@ public abstract class AbstractPluginTest {
 
     private void verifyCapabilities(Capabilities capabilities, Set<ProvidedResourceTypeCapability> pExpected, Set<RequiredResourceTypeCapability> rExpected, Set<ProvidedScriptCapability> sExpected) {
         Set<ProvidedResourceTypeCapability> provided = new HashSet<>(capabilities.getProvidedResourceTypeCapabilities());
-        StringBuilder missingProvided = new StringBuilder();
+        StringBuilder differences = new StringBuilder();
         for (ProvidedResourceTypeCapability capability : pExpected) {
             boolean removed = provided.remove(capability);
             if (!removed) {
-                missingProvided.append("Missing capability: ").append(capability.toString()).append(System.lineSeparator());
+                differences.append("Missing capability: ").append(capability.toString()).append(System.lineSeparator());
             }
         }
-        if (missingProvided.length() > 0) {
-            fail(missingProvided.toString());
-        }
-        StringBuilder extraProvided = new StringBuilder();
+
         for (ProvidedResourceTypeCapability capability : provided) {
-            extraProvided.append("Extra provided capability: ").append(capability.toString()).append(System.lineSeparator());
+            differences.append("Extra provided capability: ").append(capability.toString()).append(System.lineSeparator());
         }
-        if (extraProvided.length() > 0) {
-            fail(extraProvided.toString());
+
+        if (differences.length() > 0) {
+            fail(differences.toString());
         }
     
         Set<RequiredResourceTypeCapability> required = new HashSet<>(capabilities.getRequiredResourceTypeCapabilities());
