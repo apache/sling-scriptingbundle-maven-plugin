@@ -60,14 +60,12 @@ public class ResourceTypeFolderAnalyser {
         if (resourceTypeDirectory.startsWith(scriptsDirectory) && resourceTypeFolderPredicate.test(resourceTypeDirectory)) {
             try (DirectoryStream<Path> resourceTypeDirectoryStream = Files.newDirectoryStream(resourceTypeDirectory)) {
                 Path relativeResourceTypeDirectory = scriptsDirectory.relativize(resourceTypeDirectory);
-                final ResourceType resourceType =
-                        ResourceType.parseResourceType(
-                            FilenameUtils.normalize(inContentPackage ?
-                                PlatformNameFormat.getRepositoryPath(relativeResourceTypeDirectory.toString()) :
-                                relativeResourceTypeDirectory.toString(),
-                        true
-                            )
-                        );
+                String resourceTypePath = FilenameUtils.normalize(relativeResourceTypeDirectory.toString(), true);
+                final ResourceType resourceType = ResourceType.parseResourceType(
+                        inContentPackage
+                                ? PlatformNameFormat.getRepositoryPath(resourceTypePath)
+                                : resourceTypePath
+                );
                 resourceTypeDirectoryStream.forEach(entry -> {
                     if (Files.isRegularFile(entry)) {
                         Path file = entry.getFileName();
