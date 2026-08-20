@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>scriptingbundle-maven-plugin</artifactId>
-    <version>0.5.4</version>
+    <version>0.5.5-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Apache Sling Scripting Bundle Maven Plugin</name>
@@ -60,7 +60,7 @@
         <maven.version>3.9.16</maven.version>
         <site.jira.version.id>12344664,12347157,12348422,12350010,12350474,12350606</site.jira.version.id>
         <maven.site.path>${project.artifactId}-archives/${project.artifactId}-LATEST</maven.site.path>
-        <project.build.outputTimestamp>2026-08-20T11:14:23Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2026-08-20T11:15:09Z</project.build.outputTimestamp>
         <github.project.id>apache/sling-scriptingbundle-maven-plugin</github.project.id>
     </properties>
 
